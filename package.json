@@ -11,39 +11,98 @@
     "watch": "cds watch",
     "watch:hybrid": "cds watch --profile hybrid",
     "deploy": "cds deploy --to sqlite",
-    "watch-claims": "cds watch --open claims/webapp/index.html?sap-ui-xx-viewCache=false"
+    "watch-claims": "cds watch --open claims/webapp/index.html?sap-ui-xx-viewCache=false",
+    "test": "jest --coverage --forceExit --testPathIgnorePatterns=e2e",
+    "test:e2e": "CF_HOME=. npx cds bind --exec --profile hybrid -- jest --testMatch='**/test/e2e-*.test.js' --forceExit --testTimeout=120000"
   },
   "dependencies": {
-    "@sap/cds": "^8",
     "@sap-ai-sdk/foundation-models": "^1",
+    "@sap-ai-sdk/orchestration": "^2.9.0",
+    "@sap-ai-sdk/rpt": "^2.9.0",
     "@sap-cloud-sdk/resilience": "^3",
+    "@sap/cds": "^8",
     "express": "^4"
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@cap-js/cds-test": "^0.4.1",
     "@sap/cds-dk": "^8",
+    "babel-jest": "^30.3.0",
+    "jest": "^30.3.0",
     "sqlite3": "^5"
   },
   "cds": {
     "requires": {
       "db": {
-        "[development]": { "kind": "sqlite", "credentials": { "database": "db.sqlite" } },
-        "[production]":  { "kind": "hana-cloud" }
+        "[development]": {
+          "kind": "sqlite",
+          "credentials": {
+            "database": "db.sqlite"
+          }
+        },
+        "[production]": {
+          "kind": "hana-cloud"
+        }
       },
       "auth": {
         "[development]": {
           "kind": "mocked",
           "users": {
-            "alice": { "roles": ["FraudAnalyst"] },
-            "bob":   { "roles": ["FraudAnalyst", "Admin"] }
+            "alice": {
+              "roles": [
+                "FraudAnalyst"
+              ]
+            },
+            "bob": {
+              "roles": [
+                "FraudAnalyst",
+                "Admin"
+              ]
+            }
           }
         },
-        "[production]": { "kind": "xsuaa" }
+        "[production]": {
+          "kind": "xsuaa"
+        }
       },
       "aicore": {
-        "[hybrid]": { "kind": "aicore" }
+        "[hybrid]": {
+          "kind": "aicore"
+        }
       },
-      "outbox": { "kind": "persistent-outbox" }
+      "outbox": {
+        "kind": "persistent-outbox"
+      }
     }
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ],
+    "testTimeout": 30000,
+    "transform": {
+      "^.+\\.[jt]s$": "babel-jest"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@sap-ai-sdk|@sap-cloud-sdk)/)"
+    ],
+    "collectCoverageFrom": [
+      "srv/code/**/*.js"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 95,
+        "functions": 90,
+        "statements": 95,
+        "branches": 85
+      }
+    },
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ]
   },
   "sapux": [
     "app/claims"

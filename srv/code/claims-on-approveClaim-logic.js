@@ -3,8 +3,7 @@ const cds = require('@sap/cds');
 const LOGGER = cds.log('claims-on-approveClaim');
 
 module.exports = async function (req) {
-  const { ID } = req.params[0];
-  const { notes } = req.data;
+  const { ID, notes } = req.data;
 
   LOGGER.info('Analyst approving claim', { claimId: ID });
 

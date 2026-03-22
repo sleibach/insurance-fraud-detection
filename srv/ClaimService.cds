@@ -14,8 +14,8 @@ service ClaimService {
 
   // ─── Review actions (bound to Claims, executed by fraud analysts) ─────────────
 
-  action Claims.approveClaim(notes  : String(2000)) returns Claims;
-  action Claims.flagClaim   (reason : String(2000)) returns Claims;
+  action Claims.approveClaim(ID : UUID not null, notes  : String(2000)) returns Claims;
+  action Claims.flagClaim   (ID : UUID not null, reason : String(2000)) returns Claims;
 
   // ─── Pipeline events (transactional event queue, scheduled by ClaimIntakeService) ──
 

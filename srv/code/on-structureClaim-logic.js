@@ -56,24 +56,25 @@ module.exports = async function (msg) {
       const messages = [
         {
           role: 'system',
-          content: 'You are an insurance claim analyst. Extract structured data from the provided documents.'
+          content: 'You are an insurance claim analyst. Extract structured data from the provided documents. ' +
+            'Respond with raw JSON only — no markdown, no code blocks, no explanation. ' +
+            'Required fields: claimType (string), incidentDate (YYYY-MM-DD), claimAmount (number), description (string).'
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Analyze this insurance claim and extract structured data.\nClaim title: ${claim.title}\nDescription: ${claim.description || 'N/A'}`
+              text: `Analyze this insurance claim and extract structured data.\nClaim title: ${claim.title}\nClaimed amount: ${claim.claimAmount} ${claim.currency_code || ''}\nDescription: ${claim.description || 'N/A'}`
             },
             ...imageContents
           ]
         }
       ];
 
-      const client = createChatClient('gpt-4o');
+      const client = createChatClient('anthropic--claude-4.6-opus');
       const response = await client.run({
         messages,
-        response_format: EXTRACTION_SCHEMA,
         temperature: 0.0,
         max_tokens: 2000
       });

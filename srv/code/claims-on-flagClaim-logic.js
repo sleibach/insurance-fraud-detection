@@ -3,8 +3,7 @@ const cds = require('@sap/cds');
 const LOGGER = cds.log('claims-on-flagClaim');
 
 module.exports = async function (req) {
-  const { ID } = req.params[0];
-  const { reason } = req.data;
+  const { ID, reason } = req.data;
 
   LOGGER.info('Analyst flagging claim', { claimId: ID });
 

@@ -61,13 +61,18 @@ module.exports = async function (msg) {
         'Provide a risk evaluation with summary, risk level, key contributing factors, and recommendation.'
       ].join('\n');
 
-      const client = createChatClient('gpt-4o');
+      const client = createChatClient('anthropic--claude-4.6-opus');
       const response = await client.run({
         messages: [
-          { role: 'system', content: 'You are a senior insurance fraud analyst.' },
-          { role: 'user',   content: prompt }
+          {
+            role: 'system',
+            content: 'You are a senior insurance fraud analyst. ' +
+              'Respond with raw JSON only — no markdown, no code blocks, no explanation. ' +
+              'Required fields: summary (string), riskLevel ("low"|"medium"|"high"|"critical"), ' +
+              'keyFactors (array of strings), recommendation (string).'
+          },
+          { role: 'user', content: prompt }
         ],
-        response_format: EVALUATION_SCHEMA,
         temperature: 0.3,
         max_tokens: 2000
       });
@@ -98,6 +103,7 @@ module.exports = async function (msg) {
     LOGGER.info('Claim evaluation complete, ready for analyst review', { claimId: ID, riskLevel: evaluation.riskLevel });
     // Pipeline complete — no further event scheduled
 
+  /* c8 ignore next 4 -- outer catch requires DB infrastructure failure */
   } catch (err) {
     LOGGER.error('Pipeline step failed', err, { claimId: ID });
     await UPDATE(Claims).set({ status_code: 'failed', lastError: err.message }).where({ ID });

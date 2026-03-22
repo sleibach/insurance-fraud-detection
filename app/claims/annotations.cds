@@ -49,8 +49,8 @@ annotate service.Claims with @(
 
 annotate service.Claims with @(
   UI.Identification: [
-    { $Type: 'UI.DataFieldForAction', Action: 'ClaimService.approveClaim', Label: '{i18n>ApproveClaim}' },
-    { $Type: 'UI.DataFieldForAction', Action: 'ClaimService.flagClaim',    Label: '{i18n>FlagClaim}' }
+    { $Type: 'UI.DataFieldForAction', Action: 'ClaimService.Claims_approveClaim', Label: '{i18n>ApproveClaim}' },
+    { $Type: 'UI.DataFieldForAction', Action: 'ClaimService.Claims_flagClaim',    Label: '{i18n>FlagClaim}' }
   ]
 );
 
