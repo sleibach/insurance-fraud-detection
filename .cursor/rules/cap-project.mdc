@@ -1,0 +1,24 @@
+---
+description: Core project conventions for this SAP CAP insurance fraud detection app
+alwaysApply: true
+---
+
+# Project Conventions
+
+Read `docs/ai/cap-coding-standards.md` for all coding standards, folder structure, and patterns.
+
+## Key Rules
+
+- Domain models in `db/`, services + thin handlers in `srv/`, logic in `srv/code/`, UI in `app/`
+- Handler files (`srv/*.js`) are wiring only -- delegate to `srv/code/` modules
+- Logic file naming: `<entity>-on-<action>-logic.js`, `<entity>-before-<event>-logic.js`
+- Always use CQL (`SELECT`/`INSERT`/`UPDATE`/`DELETE`), never raw SQL
+- Prefer CDS annotations over custom code
+- Use `@sap-ai-sdk/foundation-models` for all LLM calls (see `docs/ai/sap-ai-sdk-guide.md`)
+
+## MCP Tools
+
+- **When unsure about CAP APIs**: use CDS MCP `search_docs` with your question
+- **To inspect project CDS model**: use CDS MCP `search_model` with `projectPath: "/Users/soeren.leibach/Projects/insurance-fraud-detection"`
+- **For Fiori/UI changes**: use Fiori MCP 3-step workflow (`list_functionality` -> `get_functionality_details` -> `execute_functionality`)
+- **For Fiori/annotation questions**: use Fiori MCP `search_docs`
