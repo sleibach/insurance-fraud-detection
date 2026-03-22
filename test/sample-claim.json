@@ -1,0 +1,8 @@
+{
+  "externalRef": "TEST-001",
+  "title": "Rear-end collision — intersection",
+  "description": "Vehicle was rear-ended at a traffic light. Police report filed on scene. Workshop estimate attached.",
+  "claimAmount": 4800,
+  "currency": "USD",
+  "claimType": "auto"
+}

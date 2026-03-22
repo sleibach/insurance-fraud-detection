@@ -1,0 +1,41 @@
+# CAP mail2edi
+_out
+*.db
+*.sqlite
+connection.properties
+default-*.json
+.cdsrc-private.json
+gen/
+node_modules/
+target/
+
+# Web IDE, App Studio
+.che/
+.gen/
+
+# MTA
+*_mta_build_tmp
+*.mtar
+mta_archives/
+app/claims/dist/*
+Makefile_*
+
+# Other
+.DS_Store
+*.orig
+*.log
+
+*.iml
+*.flattened-pom.xml
+
+.envrc
+.cf/*
+
+# AI
+.cursor/
+.cursor/rules/
+skills/
+docs/ai/*
+AGENTS.md
+CLAUDE.md
+.mcp.json

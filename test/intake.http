@@ -1,0 +1,98 @@
+### Insurance Fraud Detection — Claim Intake API
+### Use with VS Code REST Client or IntelliJ HTTP Client
+### Pipeline runs fully autonomously after submission:
+### submitClaim → StructureClaim → PredictFraud → EvaluateClaim
+
+@baseUrl = http://localhost:4004
+@monitorUrl = {{baseUrl}}/service/ClaimService
+@intakeUrl = {{baseUrl}}/api/intake
+
+# ─── Submit a low-risk auto claim ────────────────────────────────────────────
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-AUTO-001",
+  "title": "Minor fender bender — parking lot",
+  "description": "Vehicle was lightly bumped in a supermarket parking lot. No injuries. Estimated repair cost from workshop.",
+  "claimAmount": 1200,
+  "currency": "USD",
+  "claimType": "auto"
+}
+
+###
+
+# ─── Submit a high-risk property claim (large amount, triggers high fraud score) ─
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-PROP-007",
+  "title": "Complete home contents loss — fire",
+  "description": "Claimant reports total loss of all home contents due to kitchen fire. No fire brigade report on file.",
+  "claimAmount": 75000,
+  "currency": "EUR",
+  "claimType": "property"
+}
+
+###
+
+# ─── Submit a health claim ────────────────────────────────────────────────────
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-HLTH-042",
+  "title": "Emergency surgery — appendectomy",
+  "description": "Patient admitted for emergency appendectomy. Hospital invoice and discharge summary attached.",
+  "claimAmount": 8500,
+  "currency": "USD",
+  "claimType": "health"
+}
+
+###
+
+# ─── Submit with an attachment (base64 encoded) ───────────────────────────────
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-AUTO-012",
+  "title": "Rear-end collision — highway",
+  "description": "Vehicle rear-ended at traffic lights. Police report filed.",
+  "claimAmount": 4300,
+  "currency": "USD",
+  "claimType": "auto",
+  "attachments": [
+    {
+      "filename": "police_report.txt",
+      "mediaType": "text/plain",
+      "content": "UG9saWNlIFJlcG9ydDogSW5jaWRlbnQgb24gSGlnaHdheS4gVmVoaWNsZSAxIHJlYXItZW5kZWQgVmVoaWNsZSAyIGF0IHRyYWZmaWMgbGlnaHRzLiBObyBpbmp1cmllcy4="
+    }
+  ]
+}
+
+###
+
+# ─── Monitor: list all claims with pipeline status ────────────────────────────
+
+GET {{monitorUrl}}/Claims?$select=ID,externalRef,title,status_code,reviewNotes&$expand=prediction($select=fraudScore),evaluation($select=riskLevel)
+Authorization: Basic alice
+
+###
+
+# ─── Monitor: filter only evaluated claims ready for review ──────────────────
+
+GET {{monitorUrl}}/Claims?$filter=status_code eq 'evaluated'&$select=ID,externalRef,title&$expand=prediction($select=fraudScore),evaluation($select=riskLevel,recommendation)
+Authorization: Basic alice
+
+###
+
+# ─── Monitor: filter high-risk evaluations ───────────────────────────────────
+
+GET {{monitorUrl}}/Claims?$filter=status_code eq 'evaluated'&$expand=evaluation($select=riskLevel,recommendation,summary)&$orderby=createdAt desc
+Authorization: Basic alice

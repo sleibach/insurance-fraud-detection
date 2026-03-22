@@ -1,0 +1,12 @@
+code,name,criticality
+new,New,2
+structuring,Structuring,2
+structured,Structured,2
+predicting,Predicting,2
+predicted,Predicted,2
+evaluating,Evaluating,2
+evaluated,Evaluated,3
+reviewed,Reviewed,3
+failed,Failed,1
+approved,Approved,3
+flagged,Flagged,1

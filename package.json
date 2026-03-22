@@ -1,0 +1,51 @@
+{
+  "name": "insurance-fraud-detection",
+  "version": "1.0.0",
+  "description": "B2C insurance scam detection with AI-powered analysis pipeline",
+  "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch",
+    "watch:hybrid": "cds watch --profile hybrid",
+    "deploy": "cds deploy --to sqlite",
+    "watch-claims": "cds watch --open claims/webapp/index.html?sap-ui-xx-viewCache=false"
+  },
+  "dependencies": {
+    "@sap/cds": "^8",
+    "@sap-ai-sdk/foundation-models": "^1",
+    "@sap-cloud-sdk/resilience": "^3",
+    "express": "^4"
+  },
+  "devDependencies": {
+    "@sap/cds-dk": "^8",
+    "sqlite3": "^5"
+  },
+  "cds": {
+    "requires": {
+      "db": {
+        "[development]": { "kind": "sqlite", "credentials": { "database": "db.sqlite" } },
+        "[production]":  { "kind": "hana-cloud" }
+      },
+      "auth": {
+        "[development]": {
+          "kind": "mocked",
+          "users": {
+            "alice": { "roles": ["FraudAnalyst"] },
+            "bob":   { "roles": ["FraudAnalyst", "Admin"] }
+          }
+        },
+        "[production]": { "kind": "xsuaa" }
+      },
+      "aicore": {
+        "[hybrid]": { "kind": "aicore" }
+      },
+      "outbox": { "kind": "persistent-outbox" }
+    }
+  },
+  "sapux": [
+    "app/claims"
+  ]
+}
