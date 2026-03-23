@@ -2,6 +2,7 @@ using { fraud as db } from '../db/schema';
 
 @path    : '/service/ClaimService'
 @requires: 'authenticated-user'
+@impl    : 'srv/ClaimService.ts'
 service ClaimService {
 
   // ─── Read-only monitoring entities ───────────────────────────────────────────

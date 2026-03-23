@@ -388,7 +388,7 @@ describe('Pipeline error resilience', () => {
 
   // on-structureClaim: guard throw (outside try) — claim stays at its original status
   test('on-structureClaim: throws when claim does not exist', async () => {
-    const structureClaim = require('../srv/code/on-structureClaim-logic');
+    const structureClaim = require('../srv/code/on-structureClaim-logic').default;
     const nonExistentID = cds.utils.uuid();
 
     await expect(structureClaim({ data: { ID: nonExistentID } }))
@@ -397,7 +397,7 @@ describe('Pipeline error resilience', () => {
 
   // on-structureClaim: outer catch — triggered by emit throwing inside the try block
   test('on-structureClaim: sets status to failed when emit throws', async () => {
-    const structureClaim = require('../srv/code/on-structureClaim-logic');
+    const structureClaim = require('../srv/code/on-structureClaim-logic').default;
     const { Claims } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
@@ -428,7 +428,7 @@ describe('Pipeline error resilience', () => {
 
   // on-predictFraud: guard throw (outside try) — claim stays at original status
   test('on-predictFraud: throws when no StructuredData exists', async () => {
-    const predictFraud = require('../srv/code/on-predictFraud-logic');
+    const predictFraud = require('../srv/code/on-predictFraud-logic').default;
     const { Claims } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
@@ -451,7 +451,7 @@ describe('Pipeline error resilience', () => {
 
   // on-predictFraud: outer catch — triggered by emit throwing inside the try block
   test('on-predictFraud: sets status to failed when emit throws', async () => {
-    const predictFraud = require('../srv/code/on-predictFraud-logic');
+    const predictFraud = require('../srv/code/on-predictFraud-logic').default;
     const { Claims, StructuredData } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
@@ -491,7 +491,7 @@ describe('Pipeline error resilience', () => {
   // on-predictFraud: stub scorer fallback – RPT-1 fails → null incidentDate adds 0.2 to score
   test('on-predictFraud: stub scorer fallback handles null incidentDate', async () => {
     mockRptPredict.mockRejectedValue(new Error('AI Core unavailable')); // force stub path
-    const predictFraud = require('../srv/code/on-predictFraud-logic');
+    const predictFraud = require('../srv/code/on-predictFraud-logic').default;
     const { Claims, StructuredData, Predictions } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
@@ -531,7 +531,7 @@ describe('Pipeline error resilience', () => {
     mockRptPredict.mockResolvedValue({
       predictions: [{ FRAUD: [{ confidence: 0.72, prediction: 'yes' }] }]
     });
-    const predictFraud = require('../srv/code/on-predictFraud-logic');
+    const predictFraud = require('../srv/code/on-predictFraud-logic').default;
     const { Claims, StructuredData, Predictions } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
@@ -559,7 +559,7 @@ describe('Pipeline error resilience', () => {
 
   // on-evaluateClaim: guard throw (outside try) — status stays at original
   test('on-evaluateClaim: throws when no Prediction exists', async () => {
-    const evaluateClaim = require('../srv/code/on-evaluateClaim-logic');
+    const evaluateClaim = require('../srv/code/on-evaluateClaim-logic').default;
     const { Claims, StructuredData } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
@@ -591,7 +591,7 @@ describe('Pipeline error resilience', () => {
   // on-evaluateClaim: null structuredData is handled gracefully (no crash on JSON.stringify)
   test('on-evaluateClaim: completes with null structuredData (AI provides analysis)', async () => {
     setAiSuccess();
-    const evaluateClaim = require('../srv/code/on-evaluateClaim-logic');
+    const evaluateClaim = require('../srv/code/on-evaluateClaim-logic').default;
     const { Claims, Predictions } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 

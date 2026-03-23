@@ -118,16 +118,6 @@ cds bind aicore --to <service-instance>
 cds watch --profile hybrid
 ```
 
-## Documentation
-
-Detailed guides for contributors and AI coding assistants:
-
-- [`docs/ai/cap-coding-standards.md`](docs/ai/cap-coding-standards.md) -- CAP patterns, CDS modeling, handler delegation, CQL, logging, i18n, service mocking
-- [`docs/ai/sap-ai-sdk-guide.md`](docs/ai/sap-ai-sdk-guide.md) -- OrchestrationClient (Claude), RptClient (RPT-1), structured output, vision, resilience
-- [`docs/ai/fraud-detection-pipeline.md`](docs/ai/fraud-detection-pipeline.md) -- Pipeline architecture, entity model, event queue chaining, status flow
-- [`docs/ai/fiori-elements-guide.md`](docs/ai/fiori-elements-guide.md) -- Annotation-driven UI, List Report, Object Page, criticality
-- [`docs/ai/development-runtime.md`](docs/ai/development-runtime.md) -- Profiles, airplane mode, hybrid testing, Cloud Foundry deployment
-
 ## License
 
 Proprietary.

@@ -1,0 +1,35 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:commons="sap.suite.ui.commons"
+    controllerName="claims.ext.fragment.PipelineFlow">
+
+    <VBox id="pipelineFlowBox" class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
+        <Label id="pipelineFlowLabel" text="{i18n>ProcessingSteps}" design="Bold" class="sapUiTinyMarginBottom" />
+        <commons:MicroProcessFlow id="pipelineFlow" renderType="NoWrap">
+            <commons:content>
+                <commons:MicroProcessFlowItem
+                    id="stepIntake"
+                    state="Success"
+                    title="{i18n>StepIntake}" />
+                <commons:MicroProcessFlowItem
+                    id="stepStructure"
+                    state="{path: 'status_code', formatter: '.structureState'}"
+                    title="{i18n>StepStructure}" />
+                <commons:MicroProcessFlowItem
+                    id="stepPredict"
+                    state="{path: 'status_code', formatter: '.predictState'}"
+                    title="{i18n>StepPredict}" />
+                <commons:MicroProcessFlowItem
+                    id="stepEvaluate"
+                    state="{path: 'status_code', formatter: '.evaluateState'}"
+                    title="{i18n>StepEvaluate}" />
+                <commons:MicroProcessFlowItem
+                    id="stepReview"
+                    state="{path: 'status_code', formatter: '.reviewState'}"
+                    title="{i18n>StepReview}" />
+            </commons:content>
+        </commons:MicroProcessFlow>
+    </VBox>
+
+</core:FragmentDefinition>

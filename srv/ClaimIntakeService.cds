@@ -2,6 +2,7 @@ using { fraud as db } from '../db/schema';
 
 @protocol: 'rest'
 @path    : '/api/intake'
+@impl    : 'srv/ClaimIntakeService.ts'
 service ClaimIntakeService {
 
   type AttachmentInput {

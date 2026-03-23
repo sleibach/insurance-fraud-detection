@@ -8,12 +8,14 @@
   },
   "scripts": {
     "start": "cds-serve",
-    "watch": "cds watch",
-    "watch:hybrid": "cds watch --profile hybrid",
+    "watch": "NODE_OPTIONS='--import tsx' cds watch",
+    "watch:hybrid": "NODE_OPTIONS='--import tsx' cds watch --profile hybrid",
     "deploy": "cds deploy --to sqlite",
-    "watch-claims": "cds watch --open claims/webapp/index.html?sap-ui-xx-viewCache=false",
-    "test": "jest --coverage --forceExit --testPathIgnorePatterns=e2e",
-    "test:e2e": "CF_HOME=. npx cds bind --exec --profile hybrid -- jest --testMatch='**/test/e2e-*.test.js' --forceExit --testTimeout=120000"
+    "watch-claims": "NODE_OPTIONS='--import tsx' cds watch --open claims/webapp/index.html?sap-ui-xx-viewCache=false",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "NODE_OPTIONS='--import tsx' jest --coverage --forceExit --testPathIgnorePatterns=e2e",
+    "test:e2e": "CF_HOME=. NODE_OPTIONS='--import tsx' npx cds bind --exec --profile hybrid -- jest --testMatch='**/test/e2e-*.test.js' --forceExit --testTimeout=120000"
   },
   "dependencies": {
     "@sap-ai-sdk/foundation-models": "^1",
@@ -26,11 +28,15 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.2",
+    "@babel/preset-typescript": "^7.28.5",
     "@cap-js/cds-test": "^0.4.1",
+    "@cap-js/cds-types": "^0.16.0",
     "@sap/cds-dk": "^8",
     "babel-jest": "^30.3.0",
     "jest": "^30.3.0",
-    "sqlite3": "^5"
+    "sqlite3": "^5",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
   },
   "cds": {
     "requires": {
@@ -47,7 +53,7 @@
       },
       "auth": {
         "[development]": {
-          "kind": "mocked",
+          "kind": "dummy",
           "users": {
             "alice": {
               "roles": [
@@ -89,7 +95,8 @@
       "node_modules/(?!(@sap-ai-sdk|@sap-cloud-sdk)/)"
     ],
     "collectCoverageFrom": [
-      "srv/code/**/*.js"
+      "srv/code/**/*.{js,ts}",
+      "!srv/code/**/*.d.ts"
     ],
     "coverageThreshold": {
       "global": {

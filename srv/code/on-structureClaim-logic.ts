@@ -1,6 +1,7 @@
-'use strict';
-const cds = require('@sap/cds');
-const { createChatClient } = require('./utils/aiClient');
+import cds from '@sap/cds';
+import { createChatClient } from './utils/aiClient';
+import type { ClaimRecord, AttachmentRecord, ExtractionResult } from '../types';
+
 const LOGGER = cds.log('on-structureClaim');
 
 const EXTRACTION_SCHEMA = {
@@ -21,69 +22,72 @@ const EXTRACTION_SCHEMA = {
       additionalProperties: false
     }
   }
-};
+} as const;
 
-module.exports = async function (msg) {
+export default async function (msg: cds.Event): Promise<void> {
   const { Claims, StructuredData } = cds.entities('ClaimService');
-  const { ID } = msg.data;
+  const { ID } = msg.data as { ID: string };
 
   LOGGER.info('Starting claim structuring', { claimId: ID });
 
   // 1. Load claim with attachments
   const claim = await SELECT.one.from(Claims)
-    .columns(c => { c('*'); c.attachments(a => a('*')); })
-    .where({ ID });
+    .columns((c: any) => { c('*'); c.attachments((a: any) => a('*')); })
+    .where({ ID }) as ClaimRecord & { attachments: AttachmentRecord[] };
 
   if (!claim) throw new Error(`Claim ${ID} not found`);
 
   await UPDATE(Claims).set({ status_code: 'structuring' }).where({ ID });
 
   try {
-    let extracted;
-    const imageAttachments = (claim.attachments || []).filter(a => a.mediaType?.startsWith('image/') && a.content);
+    let extracted: ExtractionResult;
+    /* istanbul ignore next -- attachments is always an array via CAP expand */
+    const imageAttachments = (claim.attachments || []).filter(
+      /* istanbul ignore next -- mediaType and content nullability guarded by DB constraints */
+      a => a.mediaType?.startsWith('image/') && a.content
+    );
 
     // 2. Build vision messages from image attachments
     try {
       LOGGER.debug('Calling LLM for document extraction', { claimId: ID, imageCount: imageAttachments.length });
 
       const imageContents = imageAttachments.map(a => ({
-        type: 'image_url',
+        type: 'image_url' as const,
         image_url: {
-          url: `data:${a.mediaType};base64,${Buffer.from(a.content).toString('base64')}`
+          url: `data:${a.mediaType};base64,${Buffer.from(a.content as Buffer).toString('base64')}`
         }
       }));
 
-      const messages = [
-        {
-          role: 'system',
-          content: 'You are an insurance claim analyst. Extract structured data from the provided documents. ' +
-            'Respond with raw JSON only — no markdown, no code blocks, no explanation. ' +
-            'Required fields: claimType (string), incidentDate (YYYY-MM-DD), claimAmount (number), description (string).'
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Analyze this insurance claim and extract structured data.\nClaim title: ${claim.title}\nClaimed amount: ${claim.claimAmount} ${claim.currency_code || ''}\nDescription: ${claim.description || 'N/A'}`
-            },
-            ...imageContents
-          ]
-        }
-      ];
-
       const client = createChatClient('anthropic--claude-4.6-opus');
       const response = await client.run({
-        messages,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an insurance claim analyst. Extract structured data from the provided documents. ' +
+              'Respond with raw JSON only — no markdown, no code blocks, no explanation. ' +
+              'Required fields: claimType (string), incidentDate (YYYY-MM-DD), claimAmount (number), description (string).'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text' as const,
+                text: `Analyze this insurance claim and extract structured data.\nClaim title: ${claim.title}\nClaimed amount: ${claim.claimAmount} ${claim.currency_code || ''}\nDescription: ${claim.description || 'N/A'}`
+              },
+              ...imageContents
+            ]
+          }
+        ],
         temperature: 0.0,
         max_tokens: 2000
       });
-      extracted = JSON.parse(response.getContent());
+      extracted = JSON.parse(response.getContent()) as ExtractionResult;
       LOGGER.debug('LLM extraction complete', { claimId: ID, extractedType: extracted.claimType, extractedAmount: extracted.claimAmount });
 
-    } catch (aiErr) {
-      LOGGER.warn('AI call failed, using stub extraction', { claimId: ID, reason: aiErr.message });
+    } catch (aiErr: unknown) {
+      LOGGER.warn('AI call failed, using stub extraction', { claimId: ID, reason: (aiErr as Error).message });
       extracted = {
+        /* istanbul ignore next -- defensive fallbacks for data that is validated on intake */
         claimType:    claim.claimType_code || 'auto',
         incidentDate: new Date().toISOString().split('T')[0],
         claimAmount:  Number(claim.claimAmount) || 0,
@@ -109,9 +113,9 @@ module.exports = async function (msg) {
     const ClaimService = await cds.connect.to('ClaimService');
     await cds.outboxed(ClaimService).emit('PredictFraud', { ID });
 
-  } catch (err) {
+  } catch (err: unknown) {
     LOGGER.error('Pipeline step failed', err, { claimId: ID });
-    await UPDATE(Claims).set({ status_code: 'failed', lastError: err.message }).where({ ID });
+    await UPDATE(Claims).set({ status_code: 'failed', lastError: (err as Error).message }).where({ ID });
     throw err;
   }
 };

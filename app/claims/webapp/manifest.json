@@ -49,7 +49,8 @@
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
-        "sap.fe.templates": {}
+        "sap.fe.templates": {},
+        "sap.suite.ui.commons": {}
       }
     },
     "contentDensities": {
@@ -127,7 +128,19 @@
           "options": {
             "settings": {
               "editableHeaderContent": false,
-              "contextPath": "/Claims"
+              "contextPath": "/Claims",
+              "content": {
+                "header": {
+                  "facets": {
+                    "PipelineFlow": {
+                      "template": "claims.ext.fragment.PipelineFlow",
+                      "position": {
+                        "placement": "End"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

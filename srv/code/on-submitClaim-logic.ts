@@ -1,13 +1,14 @@
-'use strict';
-const cds = require('@sap/cds');
+import cds from '@sap/cds';
+import type { SubmitClaimData, SubmitClaimResult } from '../types';
+
 const LOGGER = cds.log('on-submitClaim');
 
-module.exports = async function (req) {
+export default async function (req: cds.Request): Promise<SubmitClaimResult> {
   const {
     externalRef, title, description,
     claimAmount, currency, claimType,
     attachments = []
-  } = req.data;
+  } = req.data as SubmitClaimData;
 
   LOGGER.info('Claim intake received', { externalRef, claimType, claimAmount, currency });
 

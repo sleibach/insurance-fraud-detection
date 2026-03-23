@@ -1,38 +1,19 @@
-'use strict';
-const cds = require('@sap/cds');
-const { createChatClient } = require('./utils/aiClient');
+import cds from '@sap/cds';
+import { createChatClient } from './utils/aiClient';
+import type { EvaluationResult, StructuredDataRecord, PredictionRecord } from '../types';
+
 const LOGGER = cds.log('on-evaluateClaim');
 
-const EVALUATION_SCHEMA = {
-  type: 'json_schema',
-  json_schema: {
-    name: 'claim_evaluation',
-    description: 'Risk evaluation and recommendation for an insurance claim',
-    strict: true,
-    schema: {
-      type: 'object',
-      properties: {
-        summary:        { type: 'string' },
-        riskLevel:      { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
-        keyFactors:     { type: 'array', items: { type: 'string' } },
-        recommendation: { type: 'string' }
-      },
-      required: ['summary', 'riskLevel', 'keyFactors', 'recommendation'],
-      additionalProperties: false
-    }
-  }
-};
-
-module.exports = async function (msg) {
+export default async function (msg: cds.Event): Promise<void> {
   const { Claims, StructuredData, Predictions, Evaluations } = cds.entities('ClaimService');
-  const { ID } = msg.data;
+  const { ID } = msg.data as { ID: string };
 
   LOGGER.info('Starting claim evaluation', { claimId: ID });
 
   const [claim, structuredData, prediction] = await Promise.all([
     SELECT.one.from(Claims).where({ ID }),
-    SELECT.one.from(StructuredData).where({ claim_ID: ID }),
-    SELECT.one.from(Predictions).where({ claim_ID: ID })
+    SELECT.one.from(StructuredData).where({ claim_ID: ID }) as unknown as Promise<StructuredDataRecord | null>,
+    SELECT.one.from(Predictions).where({ claim_ID: ID })    as unknown as Promise<PredictionRecord | null>
   ]);
 
   if (!prediction) throw new Error(`No Prediction for claim ${ID}. Cannot evaluate.`);
@@ -40,7 +21,7 @@ module.exports = async function (msg) {
   await UPDATE(Claims).set({ status_code: 'evaluating' }).where({ ID });
 
   try {
-    let evaluation;
+    let evaluation: EvaluationResult;
 
     try {
       LOGGER.debug('Calling LLM for risk evaluation', { claimId: ID, fraudScore: prediction.fraudScore });
@@ -76,11 +57,11 @@ module.exports = async function (msg) {
         temperature: 0.3,
         max_tokens: 2000
       });
-      evaluation = JSON.parse(response.getContent());
+      evaluation = JSON.parse(response.getContent()) as EvaluationResult;
       LOGGER.debug('LLM evaluation complete', { claimId: ID, riskLevel: evaluation.riskLevel, keyFactorCount: evaluation.keyFactors.length });
 
-    } catch (aiErr) {
-      LOGGER.warn('AI call failed, using stub evaluation', { claimId: ID, reason: aiErr.message });
+    } catch (aiErr: unknown) {
+      LOGGER.warn('AI call failed, using stub evaluation', { claimId: ID, reason: (aiErr as Error).message });
       const score = prediction.fraudScore;
       evaluation = {
         summary:        `Stub evaluation: fraud score ${score}. AI Core not configured.`,
@@ -104,9 +85,9 @@ module.exports = async function (msg) {
     // Pipeline complete — no further event scheduled
 
   /* c8 ignore next 4 -- outer catch requires DB infrastructure failure */
-  } catch (err) {
+  } catch (err: unknown) {
     LOGGER.error('Pipeline step failed', err, { claimId: ID });
-    await UPDATE(Claims).set({ status_code: 'failed', lastError: err.message }).where({ ID });
+    await UPDATE(Claims).set({ status_code: 'failed', lastError: (err as Error).message }).where({ ID });
     throw err;
   }
 };

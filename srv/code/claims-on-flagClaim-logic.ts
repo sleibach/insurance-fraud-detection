@@ -1,9 +1,9 @@
-'use strict';
-const cds = require('@sap/cds');
+import cds from '@sap/cds';
+
 const LOGGER = cds.log('claims-on-flagClaim');
 
-module.exports = async function (req) {
-  const { ID, reason } = req.data;
+export default async function (req: cds.Request): Promise<unknown> {
+  const { ID, reason } = req.data as { ID: string; reason?: string };
 
   LOGGER.info('Analyst flagging claim', { claimId: ID });
 

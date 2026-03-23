@@ -1,9 +1,9 @@
-'use strict';
-const cds = require('@sap/cds');
+import cds from '@sap/cds';
+
 const LOGGER = cds.log('claims-on-approveClaim');
 
-module.exports = async function (req) {
-  const { ID, notes } = req.data;
+export default async function (req: cds.Request): Promise<unknown> {
+  const { ID, notes } = req.data as { ID: string; notes?: string };
 
   LOGGER.info('Analyst approving claim', { claimId: ID });
 
