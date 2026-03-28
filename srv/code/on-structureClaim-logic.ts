@@ -7,6 +7,17 @@ import type {
 
 const LOGGER = cds.log('on-structureClaim');
 
+/** Strip markdown code fences that Claude sometimes adds despite being told not to. */
+function extractJson(content: string): string {
+  const match = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  return match ? match[1].trim() : content.trim();
+}
+
+/** True only for errors that indicate AI Core is not reachable (airplane mode). */
+function isConnectivityError(message: string): boolean {
+  return /no service binding|no.*binding.*found|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|fetch failed|network.*error/i.test(message);
+}
+
 const AGENT_SCHEMA = {
   type: 'json_schema',
   json_schema: {
@@ -121,11 +132,18 @@ export default async function (msg: cds.Event): Promise<void> {
         max_tokens: 4000
       });
 
-      agentResult = JSON.parse(response.getContent()) as StructureAgentResult;
+      agentResult = JSON.parse(extractJson(response.getContent())) as StructureAgentResult;
       LOGGER.debug('Structure Agent complete', { claimId: ID, result: agentResult.result, claimCount: agentResult.claims.length });
 
     } catch (aiErr: unknown) {
-      LOGGER.warn('AI call failed, using stub extraction', { claimId: ID, reason: (aiErr as Error).message });
+      const errMsg = (aiErr as Error).message ?? '';
+      // Only stub when AI Core is genuinely unreachable (airplane mode).
+      // Any other error — including bad/unparseable responses from a live AI Core —
+      // must propagate so the outer catch marks the claim as 'failed' and the
+      // outboxed event stays pending for retry.
+      if (!isConnectivityError(errMsg)) throw aiErr;
+
+      LOGGER.warn('AI Core not reachable, using stub extraction (airplane mode)', { claimId: ID, reason: errMsg });
       // Stub: always extract, never reject or split
       /* istanbul ignore start -- stub mode fallback; defensive defaults only reachable offline */
       agentResult = {

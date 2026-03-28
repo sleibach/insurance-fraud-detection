@@ -5,21 +5,25 @@ An autonomous B2C insurance claim fraud detection system built on SAP Cloud Appl
 ## Architecture
 
 ```
-                          Autonomous Pipeline (CAP Transactional Event Queues)
+                            Autonomous Pipeline (CAP Transactional Event Queues)
 
- External Systems         tx1              tx2              tx3              tx4
- ┌────────────┐     ┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐
- │ Insurer    │────>│  Intake   │──>│ Structure │──>│  Predict  │──>│ Evaluate  │
- │ Portal /   │     │  (REST)   │   │  Agent    │   │  (RPT-1)  │   │  Agent    │
- │ Email / API│     └───────────┘   └───────────┘   └───────────┘   └───────────┘
- └────────────┘      ClaimIntake     Claude 4.6       SAP RPT-1      Claude 4.6
-                      Service        Vision+LLM       Tabular ML      LLM
+ External Systems         tx1              tx2                tx3                  tx4
+ ┌────────────┐     ┌───────────┐   ┌───────────┐   ┌────────────────┐   ┌────────────────┐
+ │ Insurer    │────>│  Intake   │──>│ Structure │──>│    Predict     │──>│    Evaluate    │
+ │ Portal /   │     │  (REST)   │   │  Agent    │   │  (multi-model) │   │  (multi-model) │
+ │ Email / API│     └───────────┘   └───────────┘   └────────────────┘   └────────────────┘
+ └────────────┘      ClaimIntake     Claude 4.6       ┌──────┬──────┐     ┌──────┬──────┐
+                      Service        Vision+LLM       │RPT-1 │Random│     │Claude│ GPT  │
+                                                      │(SAP) │Forest│     │ 4.6  │ OSS  │
+                                                      └──────┴──────┘     └──────┴──────┘
+                                                       SAP AI   Self-      SAP AI  Self-
+                                                       Core    trained     Core   hosted
 
-                          Fiori Elements (Internal Monitoring + Review)
-                     ┌──────────────────────────────────────────────────┐
-                     │  List Report: claims, status, fraud scores       │
-                     │  Object Page: details, evidence, analyst actions │
-                     └──────────────────────────────────────────────────┘
+                            Fiori Elements (Internal Monitoring + Review)
+                     ┌──────────────────────────────────────────────────────┐
+                     │  List Report: claims, status, fraud scores           │
+                     │  Object Page: details, evidence, model comparison    │
+                     └──────────────────────────────────────────────────────┘
 ```
 
 ### Pipeline Steps
@@ -28,11 +32,22 @@ An autonomous B2C insurance claim fraud detection system built on SAP Cloud Appl
 |------|---------|------------|
 | **Intake** | Receive claims + attachments via REST API | CAP `@protocol: 'rest'` service |
 | **Structure** | Extract structured fields from documents using LLM vision | `@sap-ai-sdk/orchestration` / `anthropic--claude-4.6-opus` |
-| **Predict** | Classify fraud probability from tabular features | `@sap-ai-sdk/rpt` / `sap-rpt-1-large` |
-| **Evaluate** | Generate human-readable risk assessment and recommendation | `@sap-ai-sdk/orchestration` / `anthropic--claude-4.6-opus` |
-| **Review** | Analyst approves or flags claim in Fiori UI | SAP Fiori Elements (annotation-driven) |
+| **Predict** | Classify fraud probability from tabular features | Multi-model -- see below |
+| **Evaluate** | Generate human-readable risk assessment and recommendation | Multi-model -- see below |
+| **Review** | Analyst compares model results and approves or flags claim | SAP Fiori Elements (annotation-driven) |
 
 Steps 1-4 execute autonomously as chained CAP transactional event queues. Step 5 is the single human interaction point.
+
+### Multi-Model Execution (TX3 + TX4)
+
+The Predict and Evaluate steps run in **multi-model mode**: each claim is processed by multiple models in parallel so their results can be compared side-by-side.
+
+| Step | Model A (SAP AI Core) | Model B (Self-managed) | Purpose |
+|------|-----------------------|------------------------|---------|
+| **Predict** | SAP RPT-1 (`@sap-ai-sdk/rpt` / `sap-rpt-1-large`) | Self-trained Random Forest | Compare a managed foundation model against a domain-specific model trained on historical claim data |
+| **Evaluate** | Claude 4.6 (`@sap-ai-sdk/orchestration` / `anthropic--claude-4.6-opus`) | Self-hosted GPT OSS | Compare a managed commercial LLM against an open-source LLM under full operational control |
+
+Both model results are stored per claim and surfaced in the Fiori Object Page, giving fraud analysts transparency into model agreement/disagreement and helping the team benchmark model quality over time.
 
 ### Design Principles
 
@@ -47,8 +62,10 @@ Steps 1-4 execute autonomously as chained CAP transactional event queues. Step 5
 | Runtime | SAP CAP (Node.js, `@sap/cds` 8.x) |
 | Database | SQLite (dev) / SAP HANA Cloud (prod) |
 | Auth | Mocked (dev) / XSUAA (prod) |
-| LLM | SAP AI Core via `@sap-ai-sdk/orchestration` |
-| Prediction | SAP RPT-1 via `@sap-ai-sdk/rpt` |
+| LLM (managed) | Claude 4.6 via SAP AI Core (`@sap-ai-sdk/orchestration`) |
+| LLM (self-hosted) | GPT OSS -- open-source model under own infrastructure |
+| Prediction (managed) | SAP RPT-1 via SAP AI Core (`@sap-ai-sdk/rpt`) |
+| Prediction (self-trained) | Random Forest -- trained on historical claim data |
 | Resilience | `@sap-cloud-sdk/resilience` |
 | UI | SAP Fiori Elements (List Report + Object Page) |
 | Deployment | Cloud Foundry (MTA) |

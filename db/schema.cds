@@ -20,36 +20,25 @@ entity ClaimStatuses : sap.common.CodeList {
 entity Claims : cuid, managed {
   @title: '{i18n>RawText}'
   rawText        : LargeString;
-
   @title: 'Title'
   title          : String(255);
-
   @title: 'Description'
   description    : localized String(5000);
-
   @title: 'Claim Amount'
   claimAmount    : Decimal(15, 2);
-
   @title: 'Currency'
   currency       : Currency;
-
   @title: 'Claim Type'
   claimType      : Association to ClaimTypes;
-
   @title: 'Status'
   status         : Association to ClaimStatuses default 'new';
-
   @title: '{i18n>ExternalRef}'
   externalRef    : String(100);
-
   @title: '{i18n>ReviewNotes}'
   reviewNotes    : String(2000);
-
   @title: '{i18n>RejectionReason}'
   rejectionReason: LargeString;
-
   lastError      : LargeString;
-
   @title: '{i18n>ParentClaim}'
   parentClaim    : Association to Claims;
 

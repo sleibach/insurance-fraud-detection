@@ -3,7 +3,7 @@
 ### Pipeline runs fully autonomously after submission:
 ### submitClaim → StructureClaim → PredictFraud → EvaluateClaim
 
-@baseUrl = http://localhost:4005
+@baseUrl = http://localhost:4004
 @monitorUrl = {{baseUrl}}/service/ClaimService
 @intakeUrl = {{baseUrl}}/api/intake
 
