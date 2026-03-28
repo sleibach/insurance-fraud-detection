@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>23/23</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>13/13</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>19/19</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
@@ -109,54 +109,40 @@
 <a name='L44'></a><a href='#L44'>44</a>
 <a name='L45'></a><a href='#L45'>45</a>
 <a name='L46'></a><a href='#L46'>46</a>
-<a name='L47'></a><a href='#L47'>47</a>
-<a name='L48'></a><a href='#L48'>48</a>
-<a name='L49'></a><a href='#L49'>49</a>
-<a name='L50'></a><a href='#L50'>50</a>
-<a name='L51'></a><a href='#L51'>51</a>
-<a name='L52'></a><a href='#L52'>52</a>
-<a name='L53'></a><a href='#L53'>53</a>
-<a name='L54'></a><a href='#L54'>54</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L47'></a><a href='#L47'>47</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">22x</span>
-<span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-yes">18x</span>
-<span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">18x</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -175,33 +161,26 @@ import type { SubmitClaimData, SubmitClaimResult } from '../types';
 const LOGGER = cds.log('on-submitClaim');
 &nbsp;
 export default async function (req: cds.Request): Promise&lt;SubmitClaimResult&gt; {
-  const {
-    externalRef, title, description,
-    claimAmount, currency, claimType,
-    attachments = []
-  } = req.data as SubmitClaimData;
+  const { externalRef, rawText, attachments = [] } = req.data as SubmitClaimData;
 &nbsp;
-  LOGGER.info('Claim intake received', { externalRef, claimType, claimAmount, currency });
+  LOGGER.info('Claim intake received', { externalRef, hasText: !!rawText?.trim(), attachmentCount: attachments.length });
 &nbsp;
-  // Validate required fields
-  if (!title?.trim())                   return req.reject(400, 'TITLE_REQUIRED');
-  if (!claimAmount || claimAmount &lt;= 0) return req.reject(400, 'CLAIM_AMOUNT_INVALID');
-  if (!claimType)                       return req.reject(400, 'CLAIM_TYPE_REQUIRED');
-  if (!currency)                        return req.reject(400, 'CURRENCY_REQUIRED');
+  // At least one of rawText or attachments is required
+  if (!rawText?.trim() &amp;&amp; attachments.length === 0) {
+    return req.reject(400, 'SUBMIT_REQUIRES_TEXT_OR_ATTACHMENT');
+  }
 &nbsp;
   const { Claims, Attachments } = cds.entities('ClaimService');
   const ID = cds.utils.uuid();
 &nbsp;
-  // Create the claim record
+  // Create the claim with raw unstructured input only.
+  // Structured fields (title, claimAmount, currency, claimType) are filled in
+  // by the Structure Agent in the next pipeline step.
   await INSERT.into(Claims).entries({
     ID,
     externalRef,
-    title:          title.trim(),
-    description,
-    claimAmount,
-    currency_code:  currency,
-    claimType_code: claimType,
-    status_code:    'new'
+    rawText: rawText?.trim() || null,
+    status_code: 'new'
   });
 &nbsp;
   // Store attachments if provided
@@ -220,7 +199,7 @@ export default async function (req: cds.Request): Promise&lt;SubmitClaimResult&g
 &nbsp;
   LOGGER.info('Claim created, pipeline scheduled', { claimId: ID, externalRef, status: 'structuring' });
 &nbsp;
-  return { ID, externalRef, status: 'structuring' };
+  return { ID, status: 'structuring' };
 };
 &nbsp;</pre></td></tr></table></pre>
 
@@ -229,7 +208,7 @@ export default async function (req: cds.Request): Promise&lt;SubmitClaimResult&g
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-23T19:01:07.709Z
+                at 2026-03-23T19:28:26.772Z
             </div>
         <script src="../prettify.js"></script>
         <script>

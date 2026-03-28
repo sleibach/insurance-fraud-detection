@@ -1,0 +1,36 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:commons="sap.suite.ui.commons">
+
+    <commons:MicroProcessFlow id="pipelineFlowCompact" renderType="NoWrap">
+        <commons:content>
+            <commons:MicroProcessFlowItem
+                id="stepIntakeC"
+                state="Success"
+                icon="sap-icon://upload"
+                title="{i18n>StepIntake}" />
+            <commons:MicroProcessFlowItem
+                id="stepStructureC"
+                state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.structureState'}"
+                icon="sap-icon://document-text"
+                title="{i18n>StepStructure}" />
+            <commons:MicroProcessFlowItem
+                id="stepPredictC"
+                state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.predictState'}"
+                icon="sap-icon://ai"
+                title="{i18n>StepPredict}" />
+            <commons:MicroProcessFlowItem
+                id="stepEvaluateC"
+                state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.evaluateState'}"
+                icon="sap-icon://inspect"
+                title="{i18n>StepEvaluate}" />
+            <commons:MicroProcessFlowItem
+                id="stepReviewC"
+                state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.reviewState'}"
+                icon="sap-icon://approvals"
+                title="{i18n>StepReview}" />
+        </commons:content>
+    </commons:MicroProcessFlow>
+
+</core:FragmentDefinition>

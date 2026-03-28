@@ -115,9 +115,32 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable"
+                  },
+                  "columns": {
+                    "DataField::externalRef": {
+                      "width": "10rem"
+                    },
+                    "DataField::claimType::name": {
+                      "width": "10rem"
+                    },
+                    "PipelineFlow": {
+                      "header": "Processing",
+                      "position": {
+                        "anchor": "DataField::claimType::name",
+                        "placement": "After"
+                      },
+                      "template": "claims.ext.fragment.PipelineFlowCompact",
+                      "horizontalAlign": "Begin",
+                      "width": "15rem"
+                    },
+                    "DataField::title": {
+                      "width": "14rem"
+                    }
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled",
+              "defaultTemplateAnnotationPath": "com.sap.vocabularies.UI.v1.SelectionPresentationVariant#table"
             }
           }
         },

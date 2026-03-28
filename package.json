@@ -18,11 +18,12 @@
     "test:e2e": "CF_HOME=. NODE_OPTIONS='--import tsx' npx cds bind --exec --profile hybrid -- jest --testMatch='**/test/e2e-*.test.js' --forceExit --testTimeout=120000"
   },
   "dependencies": {
+    "@cap-js-community/websocket": "^1.9.4",
     "@sap-ai-sdk/foundation-models": "^1",
     "@sap-ai-sdk/orchestration": "^2.9.0",
     "@sap-ai-sdk/rpt": "^2.9.0",
     "@sap-cloud-sdk/resilience": "^3",
-    "@sap/cds": "^8",
+    "@sap/cds": "^9",
     "express": "^4"
   },
   "devDependencies": {
@@ -31,7 +32,8 @@
     "@babel/preset-typescript": "^7.28.5",
     "@cap-js/cds-test": "^0.4.1",
     "@cap-js/cds-types": "^0.16.0",
-    "@sap/cds-dk": "^8",
+    "@sap/cds-dk": "^9",
+    "@cap-js/sqlite": "^2.2.0",
     "babel-jest": "^30.3.0",
     "jest": "^30.3.0",
     "sqlite3": "^5",

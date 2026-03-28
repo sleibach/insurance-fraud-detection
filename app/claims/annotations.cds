@@ -3,6 +3,25 @@ using ClaimService as service from '../../srv/ClaimService';
 // ─── List Report ─────────────────────────────────────────────────────────────
 
 annotate service.Claims with @(
+  Common.SideEffects #mailCreated: {
+      SourceEvents : [
+          'ClaimCreated',
+      ],
+      TargetEntities : [
+          '/ClaimService.EntityContainer/Claims'
+      ]
+  },
+  Common.SideEffects #mailChanged: {
+      SourceEvents : [
+          'ClaimChanged'
+      ],
+      TargetProperties : [
+          '*',
+      ],
+      TargetEntities : [
+          'attachments'
+      ]
+  },
   UI.SelectionFields: [ status_code, claimType_code, evaluation.riskLevel ],
   UI.LineItem: [
     { $Type: 'UI.DataField', Value: externalRef,           Label: '{i18n>ExternalRef}' },
@@ -11,9 +30,32 @@ annotate service.Claims with @(
     { $Type: 'UI.DataField', Value: claimAmount,           Label: '{i18n>ClaimAmount}' },
     { $Type: 'UI.DataField', Value: prediction.fraudScore, Label: '{i18n>FraudScore}' },
     { $Type: 'UI.DataField', Value: evaluation.riskLevel,  Label: '{i18n>RiskLevel}' },
-    { $Type: 'UI.DataField', Value: status.name,           Label: '{i18n>Status}', Criticality: status.criticality },
-    { $Type: 'UI.DataField', Value: createdAt,             Label: '{i18n>CreatedAt}' }
-  ]
+    { $Type: 'UI.DataField', Value: status.name,           Label: '{i18n>Status}', Criticality: status.criticality,
+        ![@UI.Importance] : #High, },
+    { $Type: 'UI.DataField', Value: createdAt,             Label: '{i18n>CreatedAt}',
+        ![@UI.Importance] : #High, }
+  ],
+    UI.SelectionPresentationVariant #table : {
+        $Type : 'UI.SelectionPresentationVariantType',
+        PresentationVariant : {
+            $Type : 'UI.PresentationVariantType',
+            Visualizations : [
+                '@UI.LineItem',
+            ],
+            SortOrder : [
+                {
+                    $Type : 'Common.SortOrderType',
+                    Property : createdAt,
+                    Descending : true,
+                },
+            ],
+        },
+        SelectionVariant : {
+            $Type : 'UI.SelectionVariantType',
+            SelectOptions : [
+            ],
+        },
+    },
 );
 
 // ─── Object Page Header ───────────────────────────────────────────────────────
@@ -23,7 +65,7 @@ annotate service.Claims with @(
     TypeName:       '{i18n>Claim}',
     TypeNamePlural: '{i18n>Claims}',
     Title:          { Value: title },
-    Description:    { Value: status.name }
+    Description:    { Value: description }
   },
   UI.HeaderFacets: [
     { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#Status',     ID: 'StatusHeader' },

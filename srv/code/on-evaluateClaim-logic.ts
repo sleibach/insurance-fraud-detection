@@ -84,10 +84,13 @@ export default async function (msg: cds.Event): Promise<void> {
     LOGGER.info('Claim evaluation complete, ready for analyst review', { claimId: ID, riskLevel: evaluation.riskLevel });
     // Pipeline complete — no further event scheduled
 
-  /* c8 ignore next 4 -- outer catch requires DB infrastructure failure */
+  /* istanbul ignore next */
   } catch (err: unknown) {
+    /* istanbul ignore next -- outer catch requires DB infrastructure failure to reach */
     LOGGER.error('Pipeline step failed', err, { claimId: ID });
+    /* istanbul ignore next */
     await UPDATE(Claims).set({ status_code: 'failed', lastError: (err as Error).message }).where({ ID });
+    /* istanbul ignore next */
     throw err;
   }
 };

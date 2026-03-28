@@ -2,15 +2,18 @@
 
 export interface ClaimRecord {
   ID: string;
-  title: string;
+  rawText?: string;
+  title?: string;
   description?: string;
-  claimAmount: number;
+  claimAmount?: number;
   currency_code?: string;
   claimType_code?: string;
   status_code: string;
   externalRef?: string;
   reviewNotes?: string;
+  rejectionReason?: string;
   lastError?: string;
+  parentClaim_ID?: string;
   attachments?: AttachmentRecord[];
 }
 
@@ -28,6 +31,7 @@ export interface StructuredDataRecord {
   claimType?: string;
   incidentDate?: string;
   claimAmount?: number;
+  description?: string;
   extractionConfidence?: number;
   rawExtraction?: string;
 }
@@ -59,22 +63,27 @@ export interface AttachmentInput {
 
 export interface SubmitClaimData {
   externalRef?: string;
-  title: string;
-  description?: string;
-  claimAmount: number;
-  currency: string;
-  claimType: string;
+  rawText?: string;
   attachments?: AttachmentInput[];
 }
 
-// ── AI extraction / evaluation result shapes ──────────────────────────────────
+// ── Structure Agent result (discriminated union) ──────────────────────────────
 
-export interface ExtractionResult {
+export interface ExtractedClaimData {
+  title: string;
   claimType: string;
   incidentDate: string;
   claimAmount: number;
+  currency: string;
   description: string;
 }
+
+export type StructureAgentResult =
+  | { result: 'extracted'; reason: string; claims: [ExtractedClaimData] }
+  | { result: 'rejected';  reason: string; claims: [] }
+  | { result: 'split';     reason: string; claims: ExtractedClaimData[] };
+
+// ── AI extraction / evaluation result shapes ──────────────────────────────────
 
 export interface EvaluationResult {
   summary: string;
@@ -114,6 +123,5 @@ export interface ChatClient {
 
 export interface SubmitClaimResult {
   ID: string;
-  externalRef?: string;
   status: string;
 }

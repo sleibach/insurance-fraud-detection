@@ -18,14 +18,17 @@ entity ClaimStatuses : sap.common.CodeList {
 // ─── Core Entities ────────────────────────────────────────────────────────────
 
 entity Claims : cuid, managed {
+  @title: '{i18n>RawText}'
+  rawText        : LargeString;
+
   @title: 'Title'
-  title          : String(255)    not null;
+  title          : String(255);
 
   @title: 'Description'
   description    : localized String(5000);
 
   @title: 'Claim Amount'
-  claimAmount    : Decimal(15, 2) not null;
+  claimAmount    : Decimal(15, 2);
 
   @title: 'Currency'
   currency       : Currency;
@@ -42,7 +45,13 @@ entity Claims : cuid, managed {
   @title: '{i18n>ReviewNotes}'
   reviewNotes    : String(2000);
 
+  @title: '{i18n>RejectionReason}'
+  rejectionReason: LargeString;
+
   lastError      : LargeString;
+
+  @title: '{i18n>ParentClaim}'
+  parentClaim    : Association to Claims;
 
   attachments    : Composition of many Attachments    on attachments.claim    = $self;
   structuredData : Composition of one  StructuredData on structuredData.claim = $self;
@@ -75,6 +84,9 @@ entity StructuredData : cuid, managed {
 
   @title: 'Claim Amount'
   claimAmount          : Decimal(15, 2);
+
+  @title: 'Description'
+  description          : LargeString;
 
   @title: 'Extraction Confidence'
   extractionConfidence : Decimal(3, 2);

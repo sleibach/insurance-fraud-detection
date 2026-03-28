@@ -1,8 +1,7 @@
 <core:FragmentDefinition
     xmlns="sap.m"
     xmlns:core="sap.ui.core"
-    xmlns:commons="sap.suite.ui.commons"
-    controllerName="claims.ext.fragment.PipelineFlow">
+    xmlns:commons="sap.suite.ui.commons">
 
     <VBox id="pipelineFlowBox" class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
         <Label id="pipelineFlowLabel" text="{i18n>ProcessingSteps}" design="Bold" class="sapUiTinyMarginBottom" />
@@ -11,22 +10,27 @@
                 <commons:MicroProcessFlowItem
                     id="stepIntake"
                     state="Success"
+                    icon="sap-icon://upload"
                     title="{i18n>StepIntake}" />
                 <commons:MicroProcessFlowItem
                     id="stepStructure"
-                    state="{path: 'status_code', formatter: '.structureState'}"
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.structureState'}"
+                    icon="sap-icon://document-text"
                     title="{i18n>StepStructure}" />
                 <commons:MicroProcessFlowItem
                     id="stepPredict"
-                    state="{path: 'status_code', formatter: '.predictState'}"
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.predictState'}"
+                    icon="sap-icon://ai"
                     title="{i18n>StepPredict}" />
                 <commons:MicroProcessFlowItem
                     id="stepEvaluate"
-                    state="{path: 'status_code', formatter: '.evaluateState'}"
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.evaluateState'}"
+                    icon="sap-icon://inspect"
                     title="{i18n>StepEvaluate}" />
                 <commons:MicroProcessFlowItem
                     id="stepReview"
-                    state="{path: 'status_code', formatter: '.reviewState'}"
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.reviewState'}"
+                    icon="sap-icon://approvals"
                     title="{i18n>StepReview}" />
             </commons:content>
         </commons:MicroProcessFlow>

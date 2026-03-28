@@ -23,25 +23,31 @@ beforeAll(() => {
 
 // ─── AI response helpers ──────────────────────────────────────────────────────
 
-const AI_EXTRACTION = {
-  claimType: 'auto',
-  incidentDate: '2024-01-15',
-  claimAmount: 4800,
-  description: 'AI extracted — rear-end collision at traffic light'
+const AI_STRUCTURE_RESULT = {
+  result: 'extracted',
+  reason: '',
+  claims: [{
+    title:        'Rear-end collision at intersection',
+    claimType:    'auto',
+    incidentDate: '2024-01-15',
+    claimAmount:  4800,
+    currency:     'USD',
+    description:  'AI extracted — rear-end collision at traffic light'
+  }]
 };
 
 const AI_EVALUATION = {
-  summary: 'Low probability of fraud based on available evidence.',
-  riskLevel: 'low',
-  keyFactors: ['Consistent story', 'Police report filed'],
+  summary:        'Low probability of fraud based on available evidence.',
+  riskLevel:      'low',
+  keyFactors:     ['Consistent story', 'Police report filed'],
   recommendation: 'Approve with standard verification'
 };
 
 function setAiSuccess() {
-  // LLM: dispatch by system message content: extraction vs evaluation
+  // Dispatch by system message: structure agent vs evaluation agent
   mockRun.mockImplementation(({ messages = [] }) => {
     const systemContent = messages.find(m => m.role === 'system')?.content ?? '';
-    const payload = systemContent.includes('Extract structured data') ? AI_EXTRACTION : AI_EVALUATION;
+    const payload = systemContent.includes('intake agent') ? AI_STRUCTURE_RESULT : AI_EVALUATION;
     return Promise.resolve({ getContent: () => JSON.stringify(payload) });
   });
   // RPT-1: return a successful prediction (prediction='no' with 85% confidence → fraudScore≈0.15)
@@ -75,46 +81,37 @@ async function pollStatus(ID, targetStatus, timeoutMs = 8000) {
 // ─── Base payload ─────────────────────────────────────────────────────────────
 
 const BASE = {
-  title: 'Rear-end collision at intersection',
-  claimAmount: 4800,
-  currency: 'USD',
-  claimType: 'auto'
+  rawText: 'Rear-end collision at intersection on 2024-01-15. Claimed amount: $4,800 USD. Auto insurance claim.'
 };
 
 // ─── SECTION 1: submitClaim validation ───────────────────────────────────────
 
 describe('submitClaim – validation', () => {
-  test('400 when title is missing', async () => {
-    const { claimAmount, currency, claimType } = BASE;
-    await expect(POST('/api/intake/submitClaim', { claimAmount, currency, claimType }))
+  test('400 when neither rawText nor attachments provided', async () => {
+    await expect(POST('/api/intake/submitClaim', {}))
       .rejects.toMatchObject({ response: { status: 400 } });
   });
 
-  test('400 when title is blank whitespace', async () => {
-    await expect(POST('/api/intake/submitClaim', { ...BASE, title: '   ' }))
+  test('400 when rawText is blank whitespace and no attachments', async () => {
+    await expect(POST('/api/intake/submitClaim', { rawText: '   ' }))
       .rejects.toMatchObject({ response: { status: 400 } });
   });
 
-  test('400 when claimAmount is zero', async () => {
-    await expect(POST('/api/intake/submitClaim', { ...BASE, claimAmount: 0 }))
-      .rejects.toMatchObject({ response: { status: 400 } });
+  test('200 with rawText only', async () => {
+    setAiSuccess();
+    const { data: intake } = await POST('/api/intake/submitClaim', { rawText: 'Test claim text' });
+    expect(intake.status).toBe('structuring');
+    expect(intake.ID).toBeTruthy();
   });
 
-  test('400 when claimAmount is negative', async () => {
-    await expect(POST('/api/intake/submitClaim', { ...BASE, claimAmount: -100 }))
-      .rejects.toMatchObject({ response: { status: 400 } });
-  });
-
-  test('400 when claimType is missing', async () => {
-    const { title, claimAmount, currency } = BASE;
-    await expect(POST('/api/intake/submitClaim', { title, claimAmount, currency }))
-      .rejects.toMatchObject({ response: { status: 400 } });
-  });
-
-  test('400 when currency is missing', async () => {
-    const { title, claimAmount, claimType } = BASE;
-    await expect(POST('/api/intake/submitClaim', { title, claimAmount, claimType }))
-      .rejects.toMatchObject({ response: { status: 400 } });
+  test('200 with attachment only (no rawText)', async () => {
+    setAiSuccess();
+    const fakeBytes = Buffer.from('fake-doc').toString('base64');
+    const { data: intake } = await POST('/api/intake/submitClaim', {
+      attachments: [{ filename: 'doc.pdf', mediaType: 'application/pdf', content: fakeBytes }]
+    });
+    expect(intake.status).toBe('structuring');
+    expect(intake.ID).toBeTruthy();
   });
 });
 
@@ -132,13 +129,11 @@ describe('Full pipeline – AI success path', () => {
     expect(claim.status_code).toBe('evaluated');
   });
 
-  test('claim with externalRef returns it in response and persists it', async () => {
+  test('claim with externalRef persists it', async () => {
     const { data: intake } = await POST('/api/intake/submitClaim', {
       ...BASE,
       externalRef: 'INS-2024-9876'
     });
-    expect(intake.externalRef).toBe('INS-2024-9876');
-
     await pollStatus(intake.ID, 'evaluated');
 
     const { data: claim } = await GET(`/service/ClaimService/Claims(${intake.ID})`);
@@ -202,7 +197,6 @@ describe('Full pipeline – AI success path', () => {
     const fakePdfBytes = Buffer.from('fake-pdf-content').toString('base64');
     const { data: intake } = await POST('/api/intake/submitClaim', {
       ...BASE,
-      title: 'Claim with non-image attachment',
       attachments: [
         { filename: 'report.pdf', mediaType: 'application/pdf', content: fakePdfBytes }
       ]
@@ -238,32 +232,6 @@ describe('Full pipeline – AI stub fallback', () => {
     );
     expect(data.value[0].riskLevel).toBe('low');
   });
-
-  test('stub scorer: claimAmount > 10000 raises score to medium risk', async () => {
-    const { data: intake } = await POST('/api/intake/submitClaim', {
-      ...BASE,
-      claimAmount: 15000   // > 10000 → score = 0.4 → 'medium'
-    });
-    await pollStatus(intake.ID, 'evaluated');
-
-    const { data } = await GET(
-      `/service/ClaimService/Evaluations?$filter=claim_ID eq ${intake.ID}`
-    );
-    expect(data.value[0].riskLevel).toBe('medium');
-  });
-
-  test('stub scorer: claimAmount > 50000 raises score to high risk', async () => {
-    const { data: intake } = await POST('/api/intake/submitClaim', {
-      ...BASE,
-      claimAmount: 60000   // > 50000 → score = 0.7 → 'high'
-    });
-    await pollStatus(intake.ID, 'evaluated');
-
-    const { data } = await GET(
-      `/service/ClaimService/Evaluations?$filter=claim_ID eq ${intake.ID}`
-    );
-    expect(data.value[0].riskLevel).toBe('high');
-  });
 });
 
 // ─── SECTION 4: Analyst review – approveClaim ────────────────────────────────
@@ -273,10 +241,7 @@ describe('approveClaim', () => {
 
   beforeAll(async () => {
     setAiSuccess();
-    const { data: intake } = await POST('/api/intake/submitClaim', {
-      ...BASE,
-      title: 'Claim for approval test'
-    });
+    const { data: intake } = await POST('/api/intake/submitClaim', BASE);
     await pollStatus(intake.ID, 'evaluated');
     evaluatedID = intake.ID;
   });
@@ -311,10 +276,7 @@ describe('approveClaim – with notes', () => {
 
   beforeAll(async () => {
     setAiSuccess();
-    const { data: intake } = await POST('/api/intake/submitClaim', {
-      ...BASE,
-      title: 'Claim for approval with notes'
-    });
+    const { data: intake } = await POST('/api/intake/submitClaim', BASE);
     await pollStatus(intake.ID, 'evaluated');
     evaluatedID = intake.ID;
   });
@@ -336,10 +298,7 @@ describe('flagClaim', () => {
 
   beforeAll(async () => {
     setAiSuccess();
-    const { data: intake } = await POST('/api/intake/submitClaim', {
-      ...BASE,
-      title: 'Suspicious claim for flagging test'
-    });
+    const { data: intake } = await POST('/api/intake/submitClaim', BASE);
     await pollStatus(intake.ID, 'evaluated');
     evaluatedID = intake.ID;
   });
@@ -401,14 +360,7 @@ describe('Pipeline error resilience', () => {
     const { Claims } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID,
-      title: 'StructureClaim emit error test',
-      claimAmount: 1000,
-      currency_code: 'USD',
-      claimType_code: 'auto',
-      status_code: 'structuring'
-    });
+    await INSERT.into(Claims).entries({ ID, rawText: 'Emit error test claim', status_code: 'structuring' });
 
     const originalOutboxed = cds.outboxed;
     cds.outboxed = jest.fn(() => ({
@@ -426,20 +378,72 @@ describe('Pipeline error resilience', () => {
     expect(claim.lastError).toBe('Outbox unavailable');
   });
 
+  // on-structureClaim: Structure Agent rejects garbage input
+  test('on-structureClaim: sets status to rejected when agent rejects input', async () => {
+    mockRun.mockResolvedValue({
+      getContent: () => JSON.stringify({
+        result: 'rejected',
+        reason: 'Input is not an insurance claim — appears to be spam.',
+        claims: []
+      })
+    });
+
+    const structureClaim = require('../srv/code/on-structureClaim-logic').default;
+    const { Claims } = cds.entities('ClaimService');
+    const ID = cds.utils.uuid();
+
+    await INSERT.into(Claims).entries({ ID, rawText: 'buy cheap watches now!!!', status_code: 'structuring' });
+    await structureClaim({ data: { ID } });
+
+    const claim = await SELECT.one.from(Claims).where({ ID });
+    expect(claim.status_code).toBe('rejected');
+    expect(claim.rejectionReason).toContain('not an insurance claim');
+  });
+
+  // on-structureClaim: Structure Agent splits submission into multiple claims
+  test('on-structureClaim: creates child claims when agent detects split', async () => {
+    mockRun.mockResolvedValue({
+      getContent: () => JSON.stringify({
+        result: 'split',
+        reason: 'Two distinct insurance claims found in submission.',
+        claims: [
+          { title: 'Auto collision', claimType: 'auto', incidentDate: '2024-01-15', claimAmount: 4800, currency: 'USD', description: 'Rear-end collision' },
+          { title: 'Property damage', claimType: 'property', incidentDate: '2024-01-16', claimAmount: 12000, currency: 'USD', description: 'Storm damage' }
+        ]
+      })
+    });
+
+    const structureClaim = require('../srv/code/on-structureClaim-logic').default;
+    const { Claims } = cds.entities('ClaimService');
+    const parentID = cds.utils.uuid();
+
+    await INSERT.into(Claims).entries({ ID: parentID, rawText: 'Two claims in one', status_code: 'structuring' });
+
+    const originalOutboxed = cds.outboxed;
+    cds.outboxed = jest.fn(() => ({ emit: jest.fn().mockResolvedValue() }));
+    try {
+      await structureClaim({ data: { ID: parentID } });
+    } finally {
+      cds.outboxed = originalOutboxed;
+    }
+
+    const parent = await SELECT.one.from(Claims).where({ ID: parentID });
+    expect(parent.status_code).toBe('split');
+    expect(parent.rejectionReason).toContain('2 distinct claims');
+
+    // Two child claims should have been created
+    const children = await SELECT.from(Claims).where({ parentClaim_ID: parentID });
+    expect(children.length).toBe(2);
+    expect(children.map(c => c.status_code)).toEqual(expect.arrayContaining(['predicting', 'predicting']));
+  });
+
   // on-predictFraud: guard throw (outside try) — claim stays at original status
   test('on-predictFraud: throws when no StructuredData exists', async () => {
     const predictFraud = require('../srv/code/on-predictFraud-logic').default;
     const { Claims } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID,
-      title: 'PredictFraud guard test',
-      claimAmount: 1000,
-      currency_code: 'USD',
-      claimType_code: 'auto',
-      status_code: 'structured'
-    });
+    await INSERT.into(Claims).entries({ ID, status_code: 'structured' });
 
     await expect(predictFraud({ data: { ID } }))
       .rejects.toThrow(`No StructuredData for claim ${ID}. Cannot predict.`);
@@ -455,14 +459,7 @@ describe('Pipeline error resilience', () => {
     const { Claims, StructuredData } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID,
-      title: 'PredictFraud emit error test',
-      claimAmount: 1000,
-      currency_code: 'USD',
-      claimType_code: 'auto',
-      status_code: 'structured'
-    });
+    await INSERT.into(Claims).entries({ ID, status_code: 'structured' });
     await INSERT.into(StructuredData).entries({
       claim_ID: ID,
       claimType: 'auto',
@@ -495,14 +492,7 @@ describe('Pipeline error resilience', () => {
     const { Claims, StructuredData, Predictions } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID,
-      title: 'Missing date fraud score test',
-      claimAmount: 1000,
-      currency_code: 'USD',
-      claimType_code: 'auto',
-      status_code: 'structured'
-    });
+    await INSERT.into(Claims).entries({ ID, status_code: 'structured' });
     await INSERT.into(StructuredData).entries({
       claim_ID: ID,
       claimType: 'auto',
@@ -526,6 +516,58 @@ describe('Pipeline error resilience', () => {
     expect(prediction.modelVersion).toBe('rpt1-stub-v1.0');
   });
 
+  // on-predictFraud: stub scorer – claimAmount > 10000 raises score to medium risk
+  test('on-predictFraud: stub scorer: claimAmount > 10000 raises score to medium risk', async () => {
+    mockRptPredict.mockRejectedValue(new Error('AI Core unavailable'));
+    const predictFraud = require('../srv/code/on-predictFraud-logic').default;
+    const { Claims, StructuredData, Predictions } = cds.entities('ClaimService');
+    const ID = cds.utils.uuid();
+
+    await INSERT.into(Claims).entries({ ID, status_code: 'structured' });
+    await INSERT.into(StructuredData).entries({
+      claim_ID: ID, claimType: 'auto', incidentDate: '2024-01-15',
+      claimAmount: 15000, extractionConfidence: 0.85, rawExtraction: '{}'
+    });
+
+    const originalOutboxed = cds.outboxed;
+    cds.outboxed = jest.fn(() => ({ emit: jest.fn().mockResolvedValue() }));
+    try {
+      await predictFraud({ data: { ID } });
+    } finally {
+      cds.outboxed = originalOutboxed;
+    }
+
+    const prediction = await SELECT.one.from(Predictions).where({ claim_ID: ID });
+    expect(prediction.fraudScore).toBe(0.4);  // 0.1 + 0.3 (> 10000)
+    expect(prediction.modelVersion).toBe('rpt1-stub-v1.0');
+  });
+
+  // on-predictFraud: stub scorer – claimAmount > 50000 raises score to high risk
+  test('on-predictFraud: stub scorer: claimAmount > 50000 raises score to high risk', async () => {
+    mockRptPredict.mockRejectedValue(new Error('AI Core unavailable'));
+    const predictFraud = require('../srv/code/on-predictFraud-logic').default;
+    const { Claims, StructuredData, Predictions } = cds.entities('ClaimService');
+    const ID = cds.utils.uuid();
+
+    await INSERT.into(Claims).entries({ ID, status_code: 'structured' });
+    await INSERT.into(StructuredData).entries({
+      claim_ID: ID, claimType: 'property', incidentDate: '2024-01-15',
+      claimAmount: 60000, extractionConfidence: 0.85, rawExtraction: '{}'
+    });
+
+    const originalOutboxed = cds.outboxed;
+    cds.outboxed = jest.fn(() => ({ emit: jest.fn().mockResolvedValue() }));
+    try {
+      await predictFraud({ data: { ID } });
+    } finally {
+      cds.outboxed = originalOutboxed;
+    }
+
+    const prediction = await SELECT.one.from(Predictions).where({ claim_ID: ID });
+    expect(prediction.fraudScore).toBe(0.7);  // 0.1 + 0.3 (> 10000) + 0.3 (> 50000)
+    expect(prediction.modelVersion).toBe('rpt1-stub-v1.0');
+  });
+
   // on-predictFraud: RPT-1 success with 'yes' prediction → fraudScore = confidence
   test('on-predictFraud: extracts fraud score from "yes" RPT-1 prediction', async () => {
     mockRptPredict.mockResolvedValue({
@@ -535,10 +577,7 @@ describe('Pipeline error resilience', () => {
     const { Claims, StructuredData, Predictions } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID, title: 'High fraud score test', claimAmount: 5000,
-      currency_code: 'USD', claimType_code: 'property', status_code: 'structured'
-    });
+    await INSERT.into(Claims).entries({ ID, status_code: 'structured' });
     await INSERT.into(StructuredData).entries({
       claim_ID: ID, claimType: 'property', incidentDate: '2024-03-01',
       claimAmount: 5000, extractionConfidence: 0.9, rawExtraction: '{"description":"test"}'
@@ -563,14 +602,7 @@ describe('Pipeline error resilience', () => {
     const { Claims, StructuredData } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID,
-      title: 'EvaluateClaim guard test',
-      claimAmount: 1000,
-      currency_code: 'USD',
-      claimType_code: 'auto',
-      status_code: 'predicted'
-    });
+    await INSERT.into(Claims).entries({ ID, status_code: 'predicted' });
     await INSERT.into(StructuredData).entries({
       claim_ID: ID,
       claimType: 'auto',
@@ -588,6 +620,44 @@ describe('Pipeline error resilience', () => {
     expect(claim.status_code).toBe('predicted');
   });
 
+  // on-evaluateClaim: stub riskLevel branches – score >= 0.7 → high, score >= 0.4 → medium
+  test('on-evaluateClaim: stub evaluation: fraudScore 0.7 → riskLevel high + escalate recommendation', async () => {
+    mockRun.mockRejectedValue(new Error('AI Core unavailable'));
+    const evaluateClaim = require('../srv/code/on-evaluateClaim-logic').default;
+    const { Claims, Predictions, Evaluations } = cds.entities('ClaimService');
+    const ID = cds.utils.uuid();
+
+    await INSERT.into(Claims).entries({ ID, status_code: 'predicted' });
+    await INSERT.into(Predictions).entries({
+      claim_ID: ID, fraudScore: 0.7, modelVersion: 'rpt1-stub-v1.0',
+      predictionTimestamp: new Date().toISOString()
+    });
+
+    await evaluateClaim({ data: { ID } });
+
+    const [evaluation] = await SELECT.from(Evaluations).where({ claim_ID: ID });
+    expect(evaluation.riskLevel).toBe('high');
+    expect(evaluation.recommendation).toContain('Escalate');
+  });
+
+  test('on-evaluateClaim: stub evaluation: fraudScore 0.45 → riskLevel medium', async () => {
+    mockRun.mockRejectedValue(new Error('AI Core unavailable'));
+    const evaluateClaim = require('../srv/code/on-evaluateClaim-logic').default;
+    const { Claims, Predictions, Evaluations } = cds.entities('ClaimService');
+    const ID = cds.utils.uuid();
+
+    await INSERT.into(Claims).entries({ ID, status_code: 'predicted' });
+    await INSERT.into(Predictions).entries({
+      claim_ID: ID, fraudScore: 0.45, modelVersion: 'rpt1-stub-v1.0',
+      predictionTimestamp: new Date().toISOString()
+    });
+
+    await evaluateClaim({ data: { ID } });
+
+    const [evaluation] = await SELECT.from(Evaluations).where({ claim_ID: ID });
+    expect(evaluation.riskLevel).toBe('medium');
+  });
+
   // on-evaluateClaim: null structuredData is handled gracefully (no crash on JSON.stringify)
   test('on-evaluateClaim: completes with null structuredData (AI provides analysis)', async () => {
     setAiSuccess();
@@ -595,14 +665,7 @@ describe('Pipeline error resilience', () => {
     const { Claims, Predictions } = cds.entities('ClaimService');
     const ID = cds.utils.uuid();
 
-    await INSERT.into(Claims).entries({
-      ID,
-      title: 'EvaluateClaim no structured data',
-      claimAmount: 1000,
-      currency_code: 'USD',
-      claimType_code: 'auto',
-      status_code: 'predicted'
-    });
+    await INSERT.into(Claims).entries({ ID, status_code: 'predicted' });
     await INSERT.into(Predictions).entries({
       claim_ID: ID,
       fraudScore: 0.2,

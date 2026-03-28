@@ -1,5 +1,7 @@
 using { fraud as db } from '../db/schema';
 
+@Common.WebSocketBaseURL : 'ws/WebSocketService'
+@Common.WebSocketChannel #sideEffects : 'claimCreated, claimChanged'
 @path    : '/service/ClaimService'
 @requires: 'authenticated-user'
 @impl    : 'srv/ClaimService.ts'

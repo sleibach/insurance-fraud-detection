@@ -1,5 +1,5 @@
 sap.ui.define(
-    ["sap/fe/core/AppComponent"],
+    ["sap/fe/core/AppComponent", "claims/ext/formatter/pipeline"],
     function (Component) {
         "use strict";
 

@@ -3,54 +3,42 @@
 ### Pipeline runs fully autonomously after submission:
 ### submitClaim → StructureClaim → PredictFraud → EvaluateClaim
 
-@baseUrl = http://localhost:4004
+@baseUrl = http://localhost:4005
 @monitorUrl = {{baseUrl}}/service/ClaimService
 @intakeUrl = {{baseUrl}}/api/intake
 
-# ─── Submit a low-risk auto claim ────────────────────────────────────────────
+# ─── Submit a low-risk auto claim (raw text only) ────────────────────────────
 
 POST {{intakeUrl}}/submitClaim
 Content-Type: application/json
 
 {
-  "externalRef": "INS-2024-AUTO-001",
-  "title": "Minor fender bender — parking lot",
-  "description": "Vehicle was lightly bumped in a supermarket parking lot. No injuries. Estimated repair cost from workshop.",
-  "claimAmount": 1200,
-  "currency": "USD",
-  "claimType": "auto"
+  "externalRef": "INS-2024-AUTO-002",
+  "rawText": "Minor fender bender in a supermarket parking lot. Vehicle was lightly bumped. No injuries reported. Estimated repair cost from workshop is approximately USD 1,200. Claim type: auto."
 }
 
 ###
 
-# ─── Submit a high-risk property claim (large amount, triggers high fraud score) ─
+# ─── Submit a high-risk property claim (raw text only) ───────────────────────
 
 POST {{intakeUrl}}/submitClaim
 Content-Type: application/json
 
 {
   "externalRef": "INS-2024-PROP-007",
-  "title": "Complete home contents loss — fire",
-  "description": "Claimant reports total loss of all home contents due to kitchen fire. No fire brigade report on file.",
-  "claimAmount": 75000,
-  "currency": "EUR",
-  "claimType": "property"
+  "rawText": "Claimant reports total loss of all home contents due to a kitchen fire. Estimated loss EUR 75,000. No fire brigade report on file. Claim type: property."
 }
 
 ###
 
-# ─── Submit a health claim ────────────────────────────────────────────────────
+# ─── Submit a health claim (raw text only) ───────────────────────────────────
 
 POST {{intakeUrl}}/submitClaim
 Content-Type: application/json
 
 {
   "externalRef": "INS-2024-HLTH-042",
-  "title": "Emergency surgery — appendectomy",
-  "description": "Patient admitted for emergency appendectomy. Hospital invoice and discharge summary attached.",
-  "claimAmount": 8500,
-  "currency": "USD",
-  "claimType": "health"
+  "rawText": "Patient admitted for emergency appendectomy. Hospital invoice and discharge summary attached separately. Total billed amount USD 8,500. Claim type: health."
 }
 
 ###
@@ -62,11 +50,7 @@ Content-Type: application/json
 
 {
   "externalRef": "INS-2024-AUTO-012",
-  "title": "Rear-end collision — highway",
-  "description": "Vehicle rear-ended at traffic lights. Police report filed.",
-  "claimAmount": 4300,
-  "currency": "USD",
-  "claimType": "auto",
+  "rawText": "Vehicle rear-ended at traffic lights on highway. Police report filed. Estimated repair cost USD 4,300. Claim type: auto.",
   "attachments": [
     {
       "filename": "police_report.txt",

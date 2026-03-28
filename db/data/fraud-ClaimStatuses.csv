@@ -10,3 +10,5 @@ reviewed,Reviewed,3
 failed,Failed,1
 approved,Approved,3
 flagged,Flagged,1
+rejected,Rejected,1
+split,Split,2

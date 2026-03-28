@@ -1,5 +1,3 @@
-using { fraud as db } from '../db/schema';
-
 @protocol: 'rest'
 @path    : '/api/intake'
 @impl    : 'srv/ClaimIntakeService.ts'
@@ -12,19 +10,15 @@ service ClaimIntakeService {
   }
 
   // Submit a new claim from an external insurer system.
+  // At least one of rawText or attachments must be provided.
+  // The Structure Agent will extract structured fields; no pre-structured data is expected.
   // Returns the generated claim ID and initial status.
-  // Auth: add @requires: 'IntakeSystem' before production deployment.
   action submitClaim(
     externalRef  : String(100),
-    title        : String(255)   not null,
-    description  : String(5000),
-    claimAmount  : Decimal(15,2) not null,
-    currency     : String(3)     not null,
-    claimType    : String(20)    not null,
+    rawText      : LargeString,
     attachments  : array of AttachmentInput
   ) returns {
-    ID          : UUID;
-    externalRef : String(100);
-    status      : String(20);
+    ID     : UUID;
+    status : String(20);
   };
 }

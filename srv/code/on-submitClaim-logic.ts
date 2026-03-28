@@ -4,33 +4,26 @@ import type { SubmitClaimData, SubmitClaimResult } from '../types';
 const LOGGER = cds.log('on-submitClaim');
 
 export default async function (req: cds.Request): Promise<SubmitClaimResult> {
-  const {
-    externalRef, title, description,
-    claimAmount, currency, claimType,
-    attachments = []
-  } = req.data as SubmitClaimData;
+  const { externalRef, rawText, attachments = [] } = req.data as SubmitClaimData;
 
-  LOGGER.info('Claim intake received', { externalRef, claimType, claimAmount, currency });
+  LOGGER.info('Claim intake received', { externalRef, hasText: !!rawText?.trim(), attachmentCount: attachments.length });
 
-  // Validate required fields
-  if (!title?.trim())                   return req.reject(400, 'TITLE_REQUIRED');
-  if (!claimAmount || claimAmount <= 0) return req.reject(400, 'CLAIM_AMOUNT_INVALID');
-  if (!claimType)                       return req.reject(400, 'CLAIM_TYPE_REQUIRED');
-  if (!currency)                        return req.reject(400, 'CURRENCY_REQUIRED');
+  // At least one of rawText or attachments is required
+  if (!rawText?.trim() && attachments.length === 0) {
+    return req.reject(400, 'SUBMIT_REQUIRES_TEXT_OR_ATTACHMENT');
+  }
 
   const { Claims, Attachments } = cds.entities('ClaimService');
   const ID = cds.utils.uuid();
 
-  // Create the claim record
+  // Create the claim with raw unstructured input only.
+  // Structured fields (title, claimAmount, currency, claimType) are filled in
+  // by the Structure Agent in the next pipeline step.
   await INSERT.into(Claims).entries({
     ID,
     externalRef,
-    title:          title.trim(),
-    description,
-    claimAmount,
-    currency_code:  currency,
-    claimType_code: claimType,
-    status_code:    'new'
+    rawText: rawText?.trim() || null,
+    status_code: 'new'
   });
 
   // Store attachments if provided
@@ -49,5 +42,5 @@ export default async function (req: cds.Request): Promise<SubmitClaimResult> {
 
   LOGGER.info('Claim created, pipeline scheduled', { claimId: ID, externalRef, status: 'structuring' });
 
-  return { ID, externalRef, status: 'structuring' };
+  return { ID, status: 'structuring' };
 };
