@@ -33,10 +33,10 @@ def trainGBC(train):
     X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
     
     param_grid = {
-        'n_estimators': [20, 50, 100, 200],
-        'learning_rate': [0.01, 0.05, 0.1, 0.2],
+        'n_estimators': [20, 50, 100],
+        'learning_rate': [0.01, 0.05, 0.1],
         'max_depth': [3, 5, 7],
-        'min_samples_split': [2, 3, 5, 10],
+        'min_samples_split': [2, 5, 10],
         'subsample': [0.8, 1.0]
     }
     
@@ -46,7 +46,7 @@ def trainGBC(train):
         cv=StratifiedKFold(n_splits=3, shuffle=True, random_state=0),
         scoring='recall',      
         n_jobs=-1,
-        verbose=1         
+        verbose=1        
     )
     
     grid_search.fit(X_train_balanced, y_train_balanced)
@@ -104,9 +104,9 @@ if __name__ == "__main__":
 
     train, test, val = loadExcel(EXCEL_PATH)
 
-    gbc_pipeline = trainGBC(train)
-    saveClassifier(gbc_pipeline, MODEL_PATH)
-    #gbc_pipeline = loadClassifier(MODEL_PATH)
+    #gbc_pipeline = trainGBC(train)
+    #saveClassifier(gbc_pipeline, MODEL_PATH)
+    gbc_pipeline = loadClassifier(MODEL_PATH)
 
     evaluateGBC(val, gbc_pipeline)
     visualizeGBC_ROCCurve(test, gbc_pipeline)

@@ -9,6 +9,7 @@ from SupportVectorMachine import predict_svm
 from LogisticRegression import predict_lr
 from KNearestNeighbours import predict_knn
 from NaiveBayes import predict_nb
+from GradientBoost import predict_gbc
 
 app = FastAPI(
     title="ML_API",
@@ -104,6 +105,18 @@ async def predict_naive_bayes(record: dataRecord):
     data = pd.DataFrame([record.model_dump()])
     data = prepareData(data)
     predictions, probs = predict_nb(data)
+
+    return {
+        "prediction": predictions[0].item(),
+        "probabiltiy": probs[0].item()
+    }
+
+@app.post("/predict/gbc")
+async def predict_gradient_boost_classifier(record: dataRecord):
+
+    data = pd.DataFrame([record.dict()])
+    data = prepareData(data)
+    predictions, probs = predict_gbc(data)
 
     return {
         "prediction": predictions[0].item(),
