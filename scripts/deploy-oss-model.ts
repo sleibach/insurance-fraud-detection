@@ -93,6 +93,7 @@ async function main(): Promise<void> {
     scenarioId: SCENARIO_ID,
     parameterBindings: [
       { key: 'modelName',            value: spec.hfModel },
+      { key: 'servedModelName',      value: key },
       { key: 'image',                value: IMAGE },
       { key: 'dockerSecret',         value: DOCKER_SECRET },
       { key: 'instanceType',         value: spec.instanceType },

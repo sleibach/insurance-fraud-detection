@@ -13,7 +13,8 @@ metadata:
 spec:
   inputs:
     parameters:
-      - { name: modelName,           type: string, description: "HF model id, e.g. openai/gpt-oss-120b" }
+      - { name: modelName,           type: string, description: "HF model id passed to --model, e.g. openai/gpt-oss-120b" }
+      - { name: servedModelName,     type: string, default: "",  description: "Extra alias for --served-model-name (the short pipeline name, e.g. gpt-oss-120b). The HF id is always served too." }
       - { name: image,               type: string, description: "Pushed vLLM image, e.g. docker.io/<user>/vllm-openai-aicore:gptoss-gemma" }
       - { name: dockerSecret,        type: string, description: "Name of the AI Core docker registry secret" }
       - { name: instanceType,        type: string, default: "",          description: "Extended-plan GPU instance type id (e.g. L4 / L40S / H100). Bound per-deployment via the configuration; discover valid ids via the deploy-create webhook or SAP Note 3660109." }
@@ -51,7 +52,7 @@ spec:
                 set -e && echo "Starting vLLM OpenAI server for {{inputs.parameters.modelName}}"
                 && python3 -m vllm.entrypoints.openai.api_server
                 --model {{inputs.parameters.modelName}}
-                --served-model-name {{inputs.parameters.modelName}}
+                --served-model-name {{inputs.parameters.modelName}} {{inputs.parameters.servedModelName}}
                 --dtype {{inputs.parameters.dataType}}
                 --quantization {{inputs.parameters.quantization}}
                 --tensor-parallel-size {{inputs.parameters.tensorParallelSize}}
