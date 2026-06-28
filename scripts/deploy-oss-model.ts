@@ -35,9 +35,7 @@ const HF_TOKEN      = process.env.HF_TOKEN           || '';
 
 interface OssModelSpec {
   hfModel: string;
-  /** Flexible GPU instance type id on the extended plan (tenant-specific). */
-  instanceType: string;
-  /** Legacy fallback when instanceType is empty. */
+  /** AI Core resource plan id selecting the GPU (tenant-specific, extended plan). */
   resourcePlan: string;
   quantization: string;
   dataType: string;
@@ -45,27 +43,24 @@ interface OssModelSpec {
   maxModelLen: string;
 }
 
-/** BYOM registry — all three self-hosted on AI Core flexible GPU instances. */
+/** BYOM registry — all three self-hosted on AI Core GPU resource plans. */
 const MODELS: Record<string, OssModelSpec> = {
   // ~80 GB MXFP4 → single H100 80 GB.
   'gpt-oss-120b': {
     hfModel: 'openai/gpt-oss-120b',
-    instanceType: process.env.OSS_INSTANCE_120B || '',
-    resourcePlan: process.env.OSS_PLAN_120B || 'infer.l',
+    resourcePlan: process.env.OSS_PLAN_120B || process.env.OSS_GPU_PLAN || '',
     quantization: 'mxfp4', dataType: 'bfloat16', tensorParallelSize: '1', maxModelLen: '8192'
   },
   // ~16 GB MXFP4 → L4 24 GB.
   'gpt-oss-20b': {
     hfModel: 'openai/gpt-oss-20b',
-    instanceType: process.env.OSS_INSTANCE_20B || '',
-    resourcePlan: process.env.OSS_PLAN_20B || 'infer.l',
+    resourcePlan: process.env.OSS_PLAN_20B || process.env.OSS_GPU_PLAN || '',
     quantization: 'mxfp4', dataType: 'bfloat16', tensorParallelSize: '1', maxModelLen: '8192'
   },
   // 27B → L40S 48 GB with fp8 (bf16 ~54 GB won't fit 48 GB). Gated model → HF_TOKEN.
   'gemma-3-27b': {
     hfModel: 'google/gemma-3-27b-it',
-    instanceType: process.env.OSS_INSTANCE_GEMMA || '',
-    resourcePlan: process.env.OSS_PLAN_GEMMA || 'infer.l',
+    resourcePlan: process.env.OSS_PLAN_GEMMA || process.env.OSS_GPU_PLAN || '',
     quantization: 'fp8', dataType: 'bfloat16', tensorParallelSize: '1', maxModelLen: '8192'
   }
 };
@@ -84,7 +79,11 @@ async function main(): Promise<void> {
   console.log(`\nDeploying open-source model "${key}" to AI Core (BYOM / vLLM)`);
   console.log(`  image=${IMAGE}`);
   console.log(`  scenario=${SCENARIO_ID} executable=${EXECUTABLE_ID} rg=${RESOURCE_GROUP}`);
-  console.log(`  model=${spec.hfModel} instanceType=${spec.instanceType || '(resourcePlan ' + spec.resourcePlan + ')'} quant=${spec.quantization}\n`);
+  console.log(`  model=${spec.hfModel} resourcePlan=${spec.resourcePlan || '(unset!)'} quant=${spec.quantization}\n`);
+  if (!spec.resourcePlan) {
+    console.error('No resource plan set. Export OSS_GPU_PLAN (or OSS_PLAN_120B/20B/GEMMA) with the GPU plan id from AI Launchpad.');
+    process.exit(1);
+  }
 
   // 1. Configuration — scale-to-zero (minReplicas 0) keeps idle GPU cost at zero.
   const config = await ConfigurationApi.configurationCreate({
@@ -95,7 +94,6 @@ async function main(): Promise<void> {
       { key: 'modelName',            value: spec.hfModel },
       { key: 'image',                value: IMAGE },
       { key: 'dockerSecret',         value: DOCKER_SECRET },
-      { key: 'instanceType',         value: spec.instanceType },
       { key: 'resourcePlan',         value: spec.resourcePlan },
       { key: 'dataType',             value: spec.dataType },
       { key: 'quantization',         value: spec.quantization },

@@ -16,8 +16,7 @@ spec:
       - { name: modelName,           type: string, description: "HF model id, e.g. openai/gpt-oss-120b" }
       - { name: image,               type: string, description: "Pushed vLLM image, e.g. docker.io/<user>/vllm-openai-aicore:gptoss-gemma" }
       - { name: dockerSecret,        type: string, description: "Name of the AI Core docker registry secret" }
-      - { name: instanceType,        type: string, default: "",          description: "Flexible GPU instance type (extended plan), e.g. the tenant's H100 80GB / L40S 48GB id. Leave empty to use resourcePlan." }
-      - { name: resourcePlan,        type: string, default: "infer.l",   description: "Legacy resource plan fallback when instanceType is empty (infer.s/m/l)" }
+      - { name: resourcePlan,        type: string, default: "starter",   description: "AI Core resource plan id selecting the GPU (e.g. the extended-plan H100/L4/L40S plan id). Bound per-deployment via the configuration." }
       - { name: dataType,            type: string, default: "bfloat16",  description: "--dtype" }
       - { name: quantization,        type: string, default: "mxfp4",     description: "--quantization (mxfp4 for gpt-oss; fp8/None for gemma)" }
       - { name: tensorParallelSize,  type: string, default: "1",         description: "--tensor-parallel-size (GPUs per replica)" }
@@ -36,7 +35,6 @@ spec:
         autoscaling.knative.dev/scaleToZeroPodRetentionPeriod: "10m"
       labels: |
         ai.sap.com/resourcePlan: "{{inputs.parameters.resourcePlan}}"
-        ai.sap.com/instanceType: "{{inputs.parameters.instanceType}}"
     spec: |
       predictor:
         imagePullSecrets:

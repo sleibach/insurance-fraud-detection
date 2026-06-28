@@ -46,19 +46,24 @@ async function step(label: string, fn: () => Promise<void>): Promise<void> {
 async function main(): Promise<void> {
   console.log(`\n=== BYOM onboarding (resource group: ${RG}) ===\n`);
 
-  // 1. Docker registry secret
+  // 1. Docker registry secret (optional — only when registry creds are provided;
+  //    the public vLLM image can be pulled without one, modulo rate-limits)
   const secretName = process.env.BYOM_DOCKER_SECRET || 'byom-docker-secret';
-  await step(`docker registry secret '${secretName}'`, async () => {
-    const server = need('BYOM_DOCKER_SERVER');
-    const user = need('BYOM_DOCKER_USER');
-    const password = need('BYOM_DOCKER_PASSWORD');
-    const auth = Buffer.from(`${user}:${password}`).toString('base64');
-    const dockerconfigjson = JSON.stringify({ auths: { [server]: { username: user, password, auth } } });
-    await DockerRegistrySecretApi.kubesubmitV4DockerRegistrySecretsCreate(
-      { name: secretName, data: { '.dockerconfigjson': dockerconfigjson } } as any,
-      headers
-    ).execute();
-  });
+  if (process.env.BYOM_DOCKER_USER && process.env.BYOM_DOCKER_PASSWORD) {
+    await step(`docker registry secret '${secretName}'`, async () => {
+      const server = process.env.BYOM_DOCKER_SERVER || 'https://index.docker.io/v1/';
+      const user = need('BYOM_DOCKER_USER');
+      const password = need('BYOM_DOCKER_PASSWORD');
+      const auth = Buffer.from(`${user}:${password}`).toString('base64');
+      const dockerconfigjson = JSON.stringify({ auths: { [server]: { username: user, password, auth } } });
+      await DockerRegistrySecretApi.kubesubmitV4DockerRegistrySecretsCreate(
+        { name: secretName, data: { '.dockerconfigjson': dockerconfigjson } } as any,
+        headers
+      ).execute();
+    });
+  } else {
+    console.log(`• docker registry secret: skipped (set BYOM_DOCKER_USER/PASSWORD to create '${secretName}')`);
+  }
 
   // 2. Git repository
   const repoName = process.env.BYOM_GIT_NAME || 'fraud-byom-templates';
@@ -77,7 +82,7 @@ async function main(): Promise<void> {
     await ApplicationApi.kubesubmitV4ApplicationsCreate({
       applicationName: appName,
       repositoryUrl: need('BYOM_GIT_URL'),
-      revision: process.env.BYOM_GIT_REVISION || 'HEAD',
+      revision: process.env.BYOM_GIT_REVISION || 'main',
       path: process.env.BYOM_GIT_PATH || 'byom/serving-templates'
     }).execute();
   });
