@@ -1,0 +1,76 @@
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: vllm-byom
+  annotations:
+    scenarios.ai.sap.com/description: "Self-hosted open-source LLMs (vLLM, OpenAI-compatible) for the fraud-detection open-source evaluate track"
+    scenarios.ai.sap.com/name: "aicore-opensource"
+    executables.ai.sap.com/description: "vLLM OpenAI server (gpt-oss / gemma) on SAP AI Core"
+    executables.ai.sap.com/name: "aicore-opensource-vllm"
+  labels:
+    scenarios.ai.sap.com/id: "aicore-opensource"
+    ai.sap.com/version: "1.0.0"
+spec:
+  inputs:
+    parameters:
+      - { name: modelName,           type: string, description: "HF model id, e.g. openai/gpt-oss-120b" }
+      - { name: image,               type: string, description: "Pushed vLLM image, e.g. docker.io/<user>/vllm-openai-aicore:gptoss-gemma" }
+      - { name: dockerSecret,        type: string, description: "Name of the AI Core docker registry secret" }
+      - { name: instanceType,        type: string, default: "",          description: "Flexible GPU instance type (extended plan), e.g. the tenant's H100 80GB / L40S 48GB id. Leave empty to use resourcePlan." }
+      - { name: resourcePlan,        type: string, default: "infer.l",   description: "Legacy resource plan fallback when instanceType is empty (infer.s/m/l)" }
+      - { name: dataType,            type: string, default: "bfloat16",  description: "--dtype" }
+      - { name: quantization,        type: string, default: "mxfp4",     description: "--quantization (mxfp4 for gpt-oss; fp8/None for gemma)" }
+      - { name: tensorParallelSize,  type: string, default: "1",         description: "--tensor-parallel-size (GPUs per replica)" }
+      - { name: gpuMemoryUtilization,type: string, default: "0.92",      description: "--gpu-memory-utilization" }
+      - { name: maxModelLen,         type: string, default: "8192",      description: "--max-model-len" }
+      - { name: minReplicas,         type: string, default: "0",         description: "0 = scale-to-zero (no idle GPU cost; cold start on first call)" }
+      - { name: maxReplicas,         type: string, default: "1" }
+      - { name: hfToken,             type: string, default: "",          description: "HuggingFace token (needed for gated models like gemma-3)" }
+  template:
+    apiVersion: "serving.kserve.io/v1beta1"
+    metadata:
+      annotations: |
+        autoscaling.knative.dev/metric: concurrency
+        autoscaling.knative.dev/target: 1
+        autoscaling.knative.dev/targetBurstCapacity: 0
+        autoscaling.knative.dev/scaleToZeroPodRetentionPeriod: "10m"
+      labels: |
+        ai.sap.com/resourcePlan: "{{inputs.parameters.resourcePlan}}"
+        ai.sap.com/instanceType: "{{inputs.parameters.instanceType}}"
+    spec: |
+      predictor:
+        imagePullSecrets:
+          - name: "{{inputs.parameters.dockerSecret}}"
+        minReplicas: {{inputs.parameters.minReplicas}}
+        maxReplicas: {{inputs.parameters.maxReplicas}}
+        containers:
+          - name: kserve-container
+            image: "{{inputs.parameters.image}}"
+            ports:
+              - containerPort: 8000
+                protocol: TCP
+            command: ["/bin/sh", "-c"]
+            args:
+              - >
+                set -e && echo "Starting vLLM OpenAI server for {{inputs.parameters.modelName}}"
+                && python3 -m vllm.entrypoints.openai.api_server
+                --model {{inputs.parameters.modelName}}
+                --served-model-name {{inputs.parameters.modelName}}
+                --dtype {{inputs.parameters.dataType}}
+                --quantization {{inputs.parameters.quantization}}
+                --tensor-parallel-size {{inputs.parameters.tensorParallelSize}}
+                --gpu-memory-utilization {{inputs.parameters.gpuMemoryUtilization}}
+                --max-model-len {{inputs.parameters.maxModelLen}}
+                --port 8000
+            env:
+              # Redirect every cache to /tmp — world-writable, so the official
+              # public vLLM image works under AI Core's arbitrary non-root UID
+              # (no custom image / docker build required).
+              - { name: HUGGING_FACE_HUB_TOKEN, value: "{{inputs.parameters.hfToken}}" }
+              - { name: HF_HOME,            value: "/tmp/hf" }
+              - { name: HUGGINGFACE_HUB_CACHE, value: "/tmp/hf" }
+              - { name: XDG_CACHE_HOME,     value: "/tmp/.cache" }
+              - { name: VLLM_CACHE_ROOT,    value: "/tmp/.cache/vllm" }
+              - { name: OUTLINES_CACHE_DIR, value: "/tmp/.cache/outlines" }
+              - { name: NUMBA_CACHE_DIR,    value: "/tmp/.cache/numba" }
+              - { name: HOME,               value: "/tmp" }
