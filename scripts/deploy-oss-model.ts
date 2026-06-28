@@ -23,7 +23,8 @@
 import { ConfigurationApi, DeploymentApi } from '@sap-ai-sdk/ai-api';
 
 const SCENARIO_ID    = process.env.OSS_SCENARIO_ID    || 'aicore-opensource';
-const EXECUTABLE_ID  = process.env.OSS_EXECUTABLE_ID  || 'aicore-opensource-vllm';
+// Executable id = the ServingTemplate's metadata.name (NOT the display-name annotation).
+const EXECUTABLE_ID  = process.env.OSS_EXECUTABLE_ID  || 'vllm-byom';
 const RESOURCE_GROUP = process.env.OSS_LLM_RESOURCE_GROUP || 'default';
 
 // Default to the official PUBLIC vLLM image — no build/push needed; the
@@ -35,33 +36,33 @@ const HF_TOKEN      = process.env.HF_TOKEN           || '';
 
 interface OssModelSpec {
   hfModel: string;
-  /** AI Core resource plan id selecting the GPU (tenant-specific, extended plan). */
-  resourcePlan: string;
+  /** Extended-plan GPU instance type id selecting the GPU (tenant-specific). */
+  instanceType: string;
   quantization: string;
   dataType: string;
   tensorParallelSize: string;
   maxModelLen: string;
 }
 
-/** BYOM registry — all three self-hosted on AI Core GPU resource plans. */
+/** BYOM registry — all three self-hosted on AI Core extended-plan GPU instances. */
 const MODELS: Record<string, OssModelSpec> = {
-  // ~80 GB MXFP4 → single H100 80 GB.
+  // ~63 GB MXFP4 → H100 80 GB (single) or multi-L40S.
   'gpt-oss-120b': {
     hfModel: 'openai/gpt-oss-120b',
-    resourcePlan: process.env.OSS_PLAN_120B || process.env.OSS_GPU_PLAN || '',
-    quantization: 'mxfp4', dataType: 'bfloat16', tensorParallelSize: '1', maxModelLen: '8192'
+    instanceType: process.env.OSS_INSTANCE_120B || '',
+    quantization: 'mxfp4', dataType: 'bfloat16', tensorParallelSize: process.env.OSS_TP_120B || '1', maxModelLen: '8192'
   },
   // ~16 GB MXFP4 → L4 24 GB.
   'gpt-oss-20b': {
     hfModel: 'openai/gpt-oss-20b',
-    resourcePlan: process.env.OSS_PLAN_20B || process.env.OSS_GPU_PLAN || '',
-    quantization: 'mxfp4', dataType: 'bfloat16', tensorParallelSize: '1', maxModelLen: '8192'
+    instanceType: process.env.OSS_INSTANCE_20B || '',
+    quantization: 'mxfp4', dataType: 'bfloat16', tensorParallelSize: process.env.OSS_TP_20B || '1', maxModelLen: '8192'
   },
-  // 27B → L40S 48 GB with fp8 (bf16 ~54 GB won't fit 48 GB). Gated model → HF_TOKEN.
+  // 27B → L40S 48 GB (bf16 ~54 GB → fp8). Gated model → HF_TOKEN.
   'gemma-3-27b': {
     hfModel: 'google/gemma-3-27b-it',
-    resourcePlan: process.env.OSS_PLAN_GEMMA || process.env.OSS_GPU_PLAN || '',
-    quantization: 'fp8', dataType: 'bfloat16', tensorParallelSize: '1', maxModelLen: '8192'
+    instanceType: process.env.OSS_INSTANCE_GEMMA || '',
+    quantization: 'fp8', dataType: 'bfloat16', tensorParallelSize: process.env.OSS_TP_GEMMA || '1', maxModelLen: '8192'
   }
 };
 
@@ -79,9 +80,9 @@ async function main(): Promise<void> {
   console.log(`\nDeploying open-source model "${key}" to AI Core (BYOM / vLLM)`);
   console.log(`  image=${IMAGE}`);
   console.log(`  scenario=${SCENARIO_ID} executable=${EXECUTABLE_ID} rg=${RESOURCE_GROUP}`);
-  console.log(`  model=${spec.hfModel} resourcePlan=${spec.resourcePlan || '(unset!)'} quant=${spec.quantization}\n`);
-  if (!spec.resourcePlan) {
-    console.error('No resource plan set. Export OSS_GPU_PLAN (or OSS_PLAN_120B/20B/GEMMA) with the GPU plan id from AI Launchpad.');
+  console.log(`  model=${spec.hfModel} instanceType=${spec.instanceType || '(unset!)'} tp=${spec.tensorParallelSize} quant=${spec.quantization}\n`);
+  if (!spec.instanceType) {
+    console.error('No instance type set. Export OSS_INSTANCE_120B/20B/GEMMA with a valid GPU instance-type id.');
     process.exit(1);
   }
 
@@ -94,7 +95,7 @@ async function main(): Promise<void> {
       { key: 'modelName',            value: spec.hfModel },
       { key: 'image',                value: IMAGE },
       { key: 'dockerSecret',         value: DOCKER_SECRET },
-      { key: 'resourcePlan',         value: spec.resourcePlan },
+      { key: 'instanceType',         value: spec.instanceType },
       { key: 'dataType',             value: spec.dataType },
       { key: 'quantization',         value: spec.quantization },
       { key: 'tensorParallelSize',   value: spec.tensorParallelSize },
