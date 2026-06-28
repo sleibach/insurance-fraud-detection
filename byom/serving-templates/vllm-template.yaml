@@ -37,8 +37,6 @@ spec:
         ai.sap.com/instanceType: "{{inputs.parameters.instanceType}}"
     spec: |
       predictor:
-        imagePullSecrets:
-          - name: "{{inputs.parameters.dockerSecret}}"
         minReplicas: {{inputs.parameters.minReplicas}}
         maxReplicas: {{inputs.parameters.maxReplicas}}
         containers:
