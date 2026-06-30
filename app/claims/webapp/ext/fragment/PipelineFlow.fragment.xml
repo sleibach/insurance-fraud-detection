@@ -3,7 +3,7 @@
     xmlns:core="sap.ui.core"
     xmlns:commons="sap.suite.ui.commons">
 
-    <VBox id="pipelineFlowBox" class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
+    <VBox id="pipelineFlowBox" class="sapUiTinyMarginBeginEnd">
         <Label id="pipelineFlowLabel" text="{i18n>ProcessingSteps}" design="Bold" class="sapUiTinyMarginBottom" />
         <commons:MicroProcessFlow id="pipelineFlow" renderType="NoWrap">
             <commons:content>

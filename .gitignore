@@ -20,6 +20,15 @@ mta_archives/
 app/claims/dist/*
 Makefile_*
 
+# Python (ml/ FastAPI service)
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
 # Other
 .DS_Store
 *.orig
@@ -29,6 +38,9 @@ Makefile_*
 *.flattened-pom.xml
 
 .envrc
+.env
+.env.*
+*.secret
 .cf/*
 
 # AI

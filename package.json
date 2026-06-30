@@ -11,17 +11,23 @@
     "watch": "NODE_OPTIONS='--import tsx' cds watch",
     "watch:hybrid": "NODE_OPTIONS='--import tsx' cds watch --profile hybrid",
     "deploy": "cds deploy --to sqlite",
+    "deploy:oss-model": "CF_HOME=. NODE_OPTIONS='--import tsx' npx cds bind --exec --profile hybrid -- npx tsx scripts/deploy-oss-model.ts",
+    "create:destination": "CF_HOME=. NODE_OPTIONS='--import tsx' npx cds bind --exec --profile hybrid -- npx tsx scripts/create-destination.ts",
     "watch-claims": "NODE_OPTIONS='--import tsx' cds watch --open claims/webapp/index.html?sap-ui-xx-viewCache=false",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "test": "NODE_OPTIONS='--import tsx' jest --coverage --forceExit --testPathIgnorePatterns=e2e",
+    "test:opa": "NODE_OPTIONS='--import tsx' cds watch --open claims/webapp/test/integration/opaTests.qunit.html",
     "test:e2e": "CF_HOME=. NODE_OPTIONS='--import tsx' npx cds bind --exec --profile hybrid -- jest --testMatch='**/test/e2e-*.test.js' --forceExit --testTimeout=120000"
   },
   "dependencies": {
     "@cap-js-community/websocket": "^1.9.4",
+    "@sap-ai-sdk/ai-api": "^1.18.0",
+    "@sap-ai-sdk/core": "^1.18.0",
     "@sap-ai-sdk/foundation-models": "^1",
     "@sap-ai-sdk/orchestration": "^2.9.0",
     "@sap-ai-sdk/rpt": "^2.9.0",
+    "@sap-cloud-sdk/connectivity": "^4.5.1",
     "@sap-cloud-sdk/resilience": "^3",
     "@sap/cds": "^9",
     "express": "^4"
@@ -41,6 +47,11 @@
     "typescript": "^6.0.2"
   },
   "cds": {
+    "server": {
+      "body_parser": {
+        "limit": "30mb"
+      }
+    },
     "requires": {
       "db": {
         "[development]": {

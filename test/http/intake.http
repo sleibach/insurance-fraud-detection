@@ -1,0 +1,84 @@
+### Insurance Fraud Detection — Claim Intake API (REST)
+### Use with VS Code REST Client or IntelliJ HTTP Client.
+### Pipeline runs fully autonomously after submission:
+###   submitClaim → StructureClaim → PredictFraud (N models) → EvaluateClaim (M models)
+###
+### Optional run configuration (multi-model pipeline):
+###   predictModels — predict models run in parallel (default: ["sap-rpt-1-large","gbc"])
+###   evaluations   — LLMs that evaluate, each paired to ONE prediction (isolated tracks)
+###                   default: [{opus ← sap-rpt-1-large}, {gpt-oss-120b ← gbc}]
+###   actualFraud   — optional ground-truth label (labeled/demo cases only)
+###
+### See ./monitor.http for OData queries and ./demo.http for curated Tathergang cases.
+
+@intakeUrl = http://localhost:4004/api/intake
+
+# ─── 1) Minimal submit — default two isolated tracks ─────────────────────────
+# predict: sap-rpt-1-large (proprietary) + gbc (custom ML); evaluate: Claude←RPT, OSS←gbc.
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-AUTO-002",
+  "rawText": "Minor fender bender in a supermarket parking lot. Vehicle was lightly bumped. No injuries reported. Estimated repair cost from workshop is approximately USD 1,200. Claim type: auto."
+}
+
+###
+
+# ─── 2) Override the run config — compare several models in parallel ─────────
+# Three predict models; three evaluators, each consuming a specific prediction
+# (isolated tracks): Claude←RPT, gpt-oss-120b←gbc, gemma-3-27b←rf.
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-AUTO-003",
+  "rawText": "Vehicle rear-ended at traffic lights on the highway. Police report filed and a witness gave a statement. Estimated repair cost USD 4,300. Claim type: auto.",
+  "predictModels": ["sap-rpt-1-large", "gbc", "rf"],
+  "evaluations": [
+    { "model": "anthropic--claude-4.6-opus", "inputPredictModel": "sap-rpt-1-large" },
+    { "model": "gpt-oss-120b",               "inputPredictModel": "gbc" },
+    { "model": "gemma-3-27b",                "inputPredictModel": "rf" }
+  ]
+}
+
+###
+
+# ─── 3) Submit with a known ground-truth label (predicted-vs-actual) ─────────
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-PROP-007",
+  "rawText": "Claimant reports total loss of all home contents due to a kitchen fire. Estimated loss EUR 75,000. No fire brigade report on file. Claim type: property.",
+  "predictModels": ["sap-rpt-1-large", "gbc"],
+  "evaluations": [
+    { "model": "anthropic--claude-4.6-opus", "inputPredictModel": "sap-rpt-1-large" },
+    { "model": "gpt-oss-120b",               "inputPredictModel": "gbc" }
+  ],
+  "actualFraud": true
+}
+
+###
+
+# ─── 4) Submit with an attachment (base64 encoded) ───────────────────────────
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "INS-2024-AUTO-012",
+  "rawText": "Vehicle rear-ended at traffic lights on highway. Police report filed. Estimated repair cost USD 4,300. Claim type: auto.",
+  "attachments": [
+    {
+      "filename": "police_report.txt",
+      "mediaType": "text/plain",
+      "content": "UG9saWNlIFJlcG9ydDogSW5jaWRlbnQgb24gSGlnaHdheS4gVmVoaWNsZSAxIHJlYXItZW5kZWQgVmVoaWNsZSAyIGF0IHRyYWZmaWMgbGlnaHRzLiBObyBpbmp1cmllcy4="
+    }
+  ]
+}
+
+###

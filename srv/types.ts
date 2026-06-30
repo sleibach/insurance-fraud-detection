@@ -14,6 +14,11 @@ export interface ClaimRecord {
   rejectionReason?: string;
   lastError?: string;
   parentClaim_ID?: string;
+  fraudScoreProprietary?: number;
+  fraudScoreCustom?: number;
+  riskLevelProprietary?: string;
+  riskLevelOpenSource?: string;
+  actualFraud?: boolean | null;
   attachments?: AttachmentRecord[];
 }
 
@@ -34,23 +39,78 @@ export interface StructuredDataRecord {
   description?: string;
   extractionConfidence?: number;
   rawExtraction?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
 }
+
+export interface StructuredDataFieldRecord {
+  ID?: string;
+  structuredData_ID: string;
+  fieldName: string;
+  fieldValue?: string;
+}
+
+export type ModelTrack = 'proprietary' | 'custom' | 'opensource';
+export type RunStatus  = 'success' | 'stub' | 'failed';
 
 export interface PredictionRecord {
   ID?: string;
   claim_ID: string;
+  track?: ModelTrack;
+  provider?: string;
+  modelName?: string;
   fraudScore: number;
+  predictedClass?: 'yes' | 'no';
   modelVersion: string;
+  status?: RunStatus;
+  latencyMs?: number;
   predictionTimestamp: string;
 }
 
 export interface EvaluationRecord {
   ID?: string;
   claim_ID: string;
+  track?: ModelTrack;
+  provider?: string;
+  modelName?: string;
+  promptVersion?: string;
+  basedOnPrediction_ID?: string | null;
+  fraudProbability?: number;
+  fraudDecision?: boolean;
+  decisionCriticality?: number;
   summary: string;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   keyFactors: string; // JSON array stored as string
   recommendation: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  status?: RunStatus;
+  latencyMs?: number;
+}
+
+// ── Run configuration (which models to run, and the isolated pairing) ──────────
+
+export interface EvaluationRunInput {
+  model: string;
+  /** The predict model whose result this evaluation consumes (isolated track). */
+  inputPredictModel?: string;
+}
+
+export interface RunConfig {
+  predictModels: string[];
+  evaluations: EvaluationRunInput[];
+}
+
+export interface ModelRunConfigRecord {
+  ID?: string;
+  claim_ID: string;
+  stage: 'predict' | 'evaluate';
+  track?: ModelTrack;
+  modelName: string;
+  inputPredictModel?: string | null;
+  sequence?: number;
 }
 
 // ── Intake action input ───────────────────────────────────────────────────────
@@ -65,6 +125,9 @@ export interface SubmitClaimData {
   externalRef?: string;
   rawText?: string;
   attachments?: AttachmentInput[];
+  predictModels?: string[];
+  evaluations?: EvaluationRunInput[];
+  actualFraud?: boolean | null;
 }
 
 // ── Structure Agent result (discriminated union) ──────────────────────────────
@@ -76,6 +139,10 @@ export interface ExtractedClaimData {
   claimAmount: number;
   currency: string;
   description: string;
+  /** Claim-type-specific key-value pairs extracted by the Structure Agent.
+   *  Keys match the camelCase column names of the fraud training data schema,
+   *  enabling direct mapping to RPT-1 feature columns. */
+  fields: Array<{ key: string; value: string }>;
 }
 
 export type StructureAgentResult =
@@ -90,6 +157,10 @@ export interface EvaluationResult {
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   keyFactors: string[];
   recommendation: string;
+  /** LLM-as-classifier calibrated fraud probability (0..1). */
+  fraudProbability?: number;
+  /** LLM-as-classifier binary decision (true = fraud). */
+  fraudDecision?: boolean;
 }
 
 // ── AI chat client abstraction ────────────────────────────────────────────────
@@ -111,8 +182,15 @@ export interface ChatClientOptions {
   temperature?: number;
 }
 
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
 export interface ChatClientResponse {
   getContent(): string;
+  getTokenUsage(): TokenUsage;
 }
 
 export interface ChatClient {

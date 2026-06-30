@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:form="sap.ui.layout.form"
+    xmlns:unified="sap.ui.unified">
+    <Dialog
+        id="submitClaimDialog"
+        title="{i18n>SubmitClaimDialogTitle}"
+        contentWidth="46rem"
+        draggable="true"
+        resizable="true">
+        <content>
+            <form:Form editable="true">
+                <form:layout>
+                    <form:ColumnLayout columnsM="1" columnsL="1" columnsXL="1" />
+                </form:layout>
+                <form:formContainers>
+                    <form:FormContainer>
+                        <form:formElements>
+                            <form:FormElement label="{i18n>ExternalRef}">
+                                <form:fields>
+                                    <Input
+                                        id="submitClaimExternalRef"
+                                        value="{submit>/externalRef}"
+                                        placeholder="{i18n>SubmitClaimExternalRefPlaceholder}" />
+                                </form:fields>
+                            </form:FormElement>
+                            <form:FormElement label="{i18n>RawText}">
+                                <form:fields>
+                                    <TextArea
+                                        id="submitClaimRawText"
+                                        value="{submit>/rawText}"
+                                        rows="8"
+                                        width="100%"
+                                        growing="true"
+                                        growingMaxLines="16"
+                                        placeholder="{i18n>SubmitClaimRawTextPlaceholder}" />
+                                </form:fields>
+                            </form:FormElement>
+                            <form:FormElement label="{i18n>Attachments}">
+                                <form:fields>
+                                    <unified:FileUploader
+                                        id="submitClaimAttachments"
+                                        buttonText="{i18n>SubmitClaimUploadButton}"
+                                        tooltip="{i18n>SubmitClaimUploadTooltip}"
+                                        multiple="true"
+                                        fileType="png,jpg,jpeg,pdf"
+                                        change=".onAttachmentsChange"
+                                        width="100%" />
+                                </form:fields>
+                            </form:FormElement>
+                            <form:FormElement label="{i18n>ActualFraud}">
+                                <form:fields>
+                                    <CheckBox
+                                        id="submitClaimActualFraud"
+                                        selected="{submit>/actualFraud}"
+                                        text="{i18n>SubmitClaimActualFraudHint}" />
+                                </form:fields>
+                            </form:FormElement>
+                        </form:formElements>
+                    </form:FormContainer>
+                </form:formContainers>
+            </form:Form>
+
+            <VBox class="sapUiSmallMarginBeginEnd sapUiTinyMarginBottom" width="100%">
+                <Text text="{i18n>SubmitClaimAttachmentsHint}" />
+                <List
+                    id="submitClaimAttachmentList"
+                    items="{submit>/attachments}"
+                    noDataText=""
+                    showSeparators="Inner"
+                    visible="{= (${submit>/attachments} || []).length > 0 }"
+                    class="sapUiTinyMarginTop">
+                    <CustomListItem>
+                        <HBox
+                            alignItems="Center"
+                            justifyContent="SpaceBetween"
+                            width="100%">
+                            <VBox>
+                                <Title text="{submit>filename}" level="H6" />
+                                <Text text="{submit>mediaType}" />
+                            </VBox>
+                            <Button
+                                icon="sap-icon://decline"
+                                type="Transparent"
+                                tooltip="{i18n>RemoveAttachment}"
+                                press=".onRemoveAttachment" />
+                        </HBox>
+                    </CustomListItem>
+                </List>
+            </VBox>
+
+            <Panel
+                id="submitClaimConfigPanel"
+                headerText="{i18n>PipelineConfigTitle}"
+                expandable="true"
+                expanded="false"
+                width="100%">
+                <content>
+                    <VBox class="sapUiSmallMargin">
+                        <Text
+                            text="{i18n>PipelineConfigHint}"
+                            class="sapUiSmallMarginBottom" />
+
+                        <Label
+                            text="{i18n>PredictModels}"
+                            labelFor="submitClaimPredictModels"
+                            required="true"
+                            class="sapUiTinyMarginTop" />
+                        <MultiComboBox
+                            id="submitClaimPredictModels"
+                            width="100%"
+                            placeholder="{i18n>PredictModelsPlaceholder}"
+                            selectedKeys="{submit>/predictModels}"
+                            items="{submit>/predictCatalog}"
+                            selectionFinish=".onPredictModelsChange">
+                            <core:Item key="{submit>key}" text="{submit>text}" />
+                        </MultiComboBox>
+
+                        <Table
+                            id="submitClaimEvaluations"
+                            class="sapUiSmallMarginTop"
+                            items="{submit>/evaluations}"
+                            growing="false">
+                            <headerToolbar>
+                                <OverflowToolbar>
+                                    <Title text="{i18n>EvaluationsConfig}" level="H3" />
+                                    <ToolbarSpacer />
+                                    <Button
+                                        icon="sap-icon://add"
+                                        text="{i18n>AddEvaluation}"
+                                        press=".onAddEvaluation" />
+                                </OverflowToolbar>
+                            </headerToolbar>
+                            <columns>
+                                <Column>
+                                    <Text text="{i18n>EvaluatorModel}" />
+                                </Column>
+                                <Column>
+                                    <Text text="{i18n>InputPrediction}" />
+                                </Column>
+                                <Column hAlign="End" width="3.5rem" />
+                            </columns>
+                            <items>
+                                <ColumnListItem>
+                                    <cells>
+                                        <ComboBox
+                                            width="100%"
+                                            selectedKey="{submit>model}"
+                                            items="{submit>/evalCatalog}">
+                                            <core:Item key="{submit>key}" text="{submit>text}" />
+                                        </ComboBox>
+                                        <ComboBox
+                                            width="100%"
+                                            selectedKey="{submit>inputPredictModel}"
+                                            items="{submit>/predictChoices}">
+                                            <core:Item key="{submit>key}" text="{submit>text}" />
+                                        </ComboBox>
+                                        <Button
+                                            icon="sap-icon://decline"
+                                            type="Transparent"
+                                            tooltip="{i18n>RemoveEvaluation}"
+                                            press=".onRemoveEvaluation" />
+                                    </cells>
+                                </ColumnListItem>
+                            </items>
+                        </Table>
+                    </VBox>
+                </content>
+            </Panel>
+        </content>
+        <beginButton>
+            <Button
+                id="submitClaimConfirm"
+                text="{i18n>Submit}"
+                type="Emphasized"
+                press=".onSubmitConfirm" />
+        </beginButton>
+        <endButton>
+            <Button
+                id="submitClaimCancel"
+                text="{i18n>Cancel}"
+                press=".onSubmitCancel" />
+        </endButton>
+    </Dialog>
+</core:FragmentDefinition>

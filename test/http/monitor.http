@@ -1,0 +1,56 @@
+### Insurance Fraud Detection — Monitoring (OData V4, ClaimService)
+### Read-only analyst queries. Each claim now has MANY predictions/evaluations
+### (one row per model), plus denormalized summary fields for the List Report.
+###
+### Auth: dummy users from package.json (alice = FraudAnalyst, bob = Admin).
+
+@monitorUrl = http://localhost:4004/service/ClaimService
+
+# ─── List all claims with the multi-model comparison summary ─────────────────
+
+GET {{monitorUrl}}/Claims?$select=ID,externalRef,title,status_code,fraudScoreProprietary,fraudScoreCustom,riskLevelProprietary,riskLevelOpenSource,actualFraud&$orderby=createdAt desc
+Authorization: Basic alice
+
+###
+
+# ─── List claims expanding ALL predictions + evaluations (cardinality) ───────
+
+GET {{monitorUrl}}/Claims?$select=ID,externalRef,status_code&$expand=predictions($select=track,provider,modelName,fraudScore,predictedClass,status,latencyMs),evaluations($select=track,provider,modelName,fraudProbability,fraudDecision,riskLevel,completionTokens,totalTokens,status)&$orderby=createdAt desc
+Authorization: Basic alice
+
+###
+
+# ─── Only evaluated claims ready for analyst review ──────────────────────────
+
+GET {{monitorUrl}}/Claims?$filter=status_code eq 'evaluated'&$select=ID,externalRef,title,fraudScoreProprietary,fraudScoreCustom&$expand=evaluations($select=modelName,riskLevel,fraudProbability,recommendation)
+Authorization: Basic alice
+
+###
+
+# ─── Isolated-track view: each evaluation + the prediction it consumed ───────
+
+GET {{monitorUrl}}/Evaluations?$select=track,provider,modelName,fraudProbability,fraudDecision,decisionCriticality,completionTokens,totalTokens,latencyMs&$expand=basedOnPrediction($select=track,modelName,fraudScore,predictedClass)&$orderby=createdAt desc
+Authorization: Basic alice
+
+###
+
+# ─── Token usage across the pipeline (structure + evaluate) ──────────────────
+
+GET {{monitorUrl}}/StructuredData?$select=ID,promptTokens,completionTokens,totalTokens,extractionConfidence
+Authorization: Basic alice
+
+###
+
+# ─── Requested run configuration (ModelRunConfig) per claim ──────────────────
+
+GET {{monitorUrl}}/ModelRunConfig?$select=stage,track,modelName,inputPredictModel,sequence&$orderby=stage,sequence
+Authorization: Basic alice
+
+###
+
+# ─── Drill into one claim (replace the key GUID) ─────────────────────────────
+
+GET {{monitorUrl}}/Claims(11111111-1111-1111-1111-111111111111)?$expand=structuredData($select=promptTokens,completionTokens,totalTokens),predictions,evaluations($expand=basedOnPrediction($select=modelName,fraudScore)),runConfig
+Authorization: Basic alice
+
+###

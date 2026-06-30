@@ -1,0 +1,178 @@
+### Insurance Fraud Detection — Live Demo (curated Tathergang cases)
+### Generated from test/fixtures/demo-cases.json (scripts/extract-demo-cases.ts).
+### Each case carries a known actualFraud label so the UI shows predicted-vs-actual
+### per model. Submit a few, then open the Claims tab / ./monitor.http to compare.
+###
+### Pipeline (default isolated tracks): predict = sap-rpt-1-large + gbc;
+###   evaluate = Claude←RPT (proprietary) and gpt-oss-120b←gbc (open source).
+
+@intakeUrl = http://localhost:4004/api/intake
+
+# ─── clear-legit-1 (actualFraud=false) ─────────────────────────
+# No fraud; police report filed, straightforward incident.
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "DEMO-CLEAR-LEGIT-01",
+  "rawText": "I had a single-vehicle accident on a Wednesday in mid-January. Coming back through the city late at night in my Honda Sport - the high-trim version - I hit ice on an off-ramp and clipped the concrete barrier. The front quarter panel, headlight, and bumper assembly all took the hit. I called the police given the location and they filed a report, even though no one else was involved. I'm in my mid-thirties, this is my first claim on this policy, and I'm covering the $400 deductible.",
+  "predictModels": [
+    "sap-rpt-1-large",
+    "gbc"
+  ],
+  "evaluations": [
+    {
+      "model": "anthropic--claude-4.6-opus",
+      "inputPredictModel": "sap-rpt-1-large"
+    },
+    {
+      "model": "gpt-oss-120b",
+      "inputPredictModel": "gbc"
+    }
+  ],
+  "actualFraud": false
+}
+
+###
+
+# ─── clear-legit-2 (actualFraud=false) ─────────────────────────
+# No fraud; police report filed, plausible single-vehicle accident.
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "DEMO-CLEAR-LEGIT-02",
+  "rawText": "\"In late June I was driving back from a fishing trip on a country road - my Toyota Sport is a modest, well-used car, well past its prime but still reliable - when another driver came round a bend too fast and clipped my rear quarter. I lost control briefly and ended up half in the verge. We both got out, no injuries, but his car was clearly at fault and we called the police given how remote the spot was. The repair has stretched out - more parts kept getting added to the bill - and the supplements have piled up. I'm in my sixties; second claim on this policy. $400 deductible.\"",
+  "predictModels": [
+    "sap-rpt-1-large",
+    "gbc"
+  ],
+  "evaluations": [
+    {
+      "model": "anthropic--claude-4.6-opus",
+      "inputPredictModel": "sap-rpt-1-large"
+    },
+    {
+      "model": "gpt-oss-120b",
+      "inputPredictModel": "gbc"
+    }
+  ],
+  "actualFraud": false
+}
+
+###
+
+# ─── clear-fraud-1 (actualFraud=true) ─────────────────────────
+# Fraud; no police report and added supplements — multiple red flags.
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "DEMO-CLEAR-FRAUD-01",
+  "rawText": "It was a Sunday afternoon in late July, my wife and I were driving up to her parents' cabin on a quiet country road. I'd been keeping the speed reasonable in my Honda Sport - it's a high-end coupe, only four years old - when I lost grip on loose gravel coming out of a curve and slid into the verge. The car came to rest against a low embankment. The damage was more than I'd expected from a slow slide: front bumper cracked, hood creased, fender bent, and the body shop later found radiator and frame issues. I was alone, no other vehicles involved at that hour. We got the car towed and back home eventually. I sat on the claim through autumn and winter because the cabin trips kept us busy and I figured the insurance could wait, finally filed in January. $400 deductible.",
+  "predictModels": [
+    "sap-rpt-1-large",
+    "gbc"
+  ],
+  "evaluations": [
+    {
+      "model": "anthropic--claude-4.6-opus",
+      "inputPredictModel": "sap-rpt-1-large"
+    },
+    {
+      "model": "gpt-oss-120b",
+      "inputPredictModel": "gbc"
+    }
+  ],
+  "actualFraud": true
+}
+
+###
+
+# ─── clear-fraud-2 (actualFraud=true) ─────────────────────────
+# Fraud; recent address change shortly before the claim.
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "DEMO-CLEAR-FRAUD-02",
+  "rawText": "It was a Monday in mid-December and I was driving back from a friend's lake house on a quiet country road when I hit a deep pothole I hadn't seen coming. My Toyota Sedan is a mid-priced car, well past seven years. Front suspension took the impact straight on, both lower control arms ended up bent, and the alloy was cracked - the body shop later flagged steering rack and frame stress on that side too, which all falls under my comprehensive cover. We'd just moved to the area a few months earlier so I didn't really know my way around yet. No other vehicles involved. The body shop has been working through more than a half-dozen supplements as they uncovered more, and the paperwork finally wrapped up in May. I have two vehicles in the household, first claim on this policy. $400 deductible.",
+  "predictModels": [
+    "sap-rpt-1-large",
+    "gbc"
+  ],
+  "evaluations": [
+    {
+      "model": "anthropic--claude-4.6-opus",
+      "inputPredictModel": "sap-rpt-1-large"
+    },
+    {
+      "model": "gpt-oss-120b",
+      "inputPredictModel": "gbc"
+    }
+  ],
+  "actualFraud": true
+}
+
+###
+
+# ─── borderline-fraud-1 (actualFraud=true) ─────────────────────────
+# Fraud despite benign-looking signals (no supplements, no address change).
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "DEMO-BORDERLINE-FRAUD-01",
+  "rawText": "It was a Saturday in early July, my first summer with the Honda Sedan - a high-end model my parents had put on the policy when I got my license. I was pulling out of a parking space at a shopping centre, alone in the car, when I clipped a low bollard with the rear corner. The contact felt minor at the time, almost just a tap, but when I got out the damage was extensive: the bumper cracked, the trunk wouldn't close properly, and the rear quarter had a deep dent. My friend who was riding with me said he didn't even feel the impact. There was no one else around at that hour, no other vehicles involved. I sat on the whole thing through the rest of the summer because I was nervous about telling my parents, and only filed the claim in early September. $400 deductible.",
+  "predictModels": [
+    "sap-rpt-1-large",
+    "gbc"
+  ],
+  "evaluations": [
+    {
+      "model": "anthropic--claude-4.6-opus",
+      "inputPredictModel": "sap-rpt-1-large"
+    },
+    {
+      "model": "gpt-oss-120b",
+      "inputPredictModel": "gbc"
+    }
+  ],
+  "actualFraud": true
+}
+
+###
+
+# ─── borderline-legit-1 (actualFraud=false) ─────────────────────────
+# Legitimate but carries suspicious-looking signals (supplements / address change).
+
+POST {{intakeUrl}}/submitClaim
+Content-Type: application/json
+
+{
+  "externalRef": "DEMO-BORDERLINE-LEGIT-01",
+  "rawText": "In late December I was driving home through the city in my Honda Sport coupe - a high-end model - when I lost the back end on a wet patch and slid into a kerb at a junction. The front-passenger wheel and lower bumper took the impact, with scraping along the rocker panel. I'm only a few years into driving and I'd moved into this neighbourhood about a year ago, so I'm still learning the corners. No one was hurt and there were no other cars involved, so I didn't call the police. I filed the claim with my agent over the new year - my deductible's $300.",
+  "predictModels": [
+    "sap-rpt-1-large",
+    "gbc"
+  ],
+  "evaluations": [
+    {
+      "model": "anthropic--claude-4.6-opus",
+      "inputPredictModel": "sap-rpt-1-large"
+    },
+    {
+      "model": "gpt-oss-120b",
+      "inputPredictModel": "gbc"
+    }
+  ],
+  "actualFraud": false
+}
+
+###
+

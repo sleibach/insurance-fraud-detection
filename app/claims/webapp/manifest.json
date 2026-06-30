@@ -44,13 +44,23 @@
   },
   "sap.ui5": {
     "flexEnabled": true,
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ListReport.ListReportController": {
+            "controllerName": "claims.ext.controller.ListReportExt"
+          }
+        }
+      }
+    },
     "dependencies": {
       "minUI5Version": "1.146.0",
       "libs": {
         "sap.m": {},
         "sap.ui.core": {},
         "sap.fe.templates": {},
-        "sap.suite.ui.commons": {}
+        "sap.suite.ui.commons": {},
+        "sap.ui.unified": {}
       }
     },
     "contentDensities": {
@@ -113,6 +123,14 @@
               },
               "controlConfiguration": {
                 "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "actions": {
+                    "SubmitClaim": {
+                      "press": ".extension.claims.ext.controller.ListReportExt.onSubmitClaim",
+                      "text": "{i18n>SubmitClaim}",
+                      "enabled": true,
+                      "requiresSelection": false
+                    }
+                  },
                   "tableSettings": {
                     "type": "ResponsiveTable"
                   },
@@ -152,6 +170,32 @@
             "settings": {
               "editableHeaderContent": false,
               "contextPath": "/Claims",
+              "controlConfiguration": {
+                "attachments/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "condensedLayout": true
+                  }
+                },
+                "structuredData/fields/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "condensedLayout": true
+                  }
+                },
+                "predictions/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "condensedLayout": true
+                  }
+                },
+                "evaluations/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "condensedLayout": true
+                  }
+                }
+              },
               "content": {
                 "header": {
                   "facets": {

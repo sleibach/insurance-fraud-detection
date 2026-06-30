@@ -63,6 +63,24 @@ const MODELS: Record<string, OssModelSpec> = {
     hfModel: 'google/gemma-3-27b-it',
     instanceType: process.env.OSS_INSTANCE_GEMMA || '',
     quantization: 'fp8', dataType: 'bfloat16', tensorParallelSize: process.env.OSS_TP_GEMMA || '1', maxModelLen: '8192'
+  },
+  // Tiny capacity-probe model (~1 GB AWQ int4) on the smallest/cheapest GPU
+  // (T4 16 GB via g4dn.xlarge). AWQ runs on Turing (sm_75). Use this to test
+  // whether ANY GPU node schedules — if this lands but L4/L40S don't, the
+  // shortage is specific to the newer GPUs; if even this is Unschedulable,
+  // the tenant has no schedulable GPU capacity at all.
+  'tiny-test': {
+    hfModel: 'Qwen/Qwen2.5-1.5B-Instruct-AWQ',
+    instanceType: process.env.OSS_INSTANCE_TINY || 'g4dn.xlarge',
+    quantization: 'awq', dataType: 'float16', tensorParallelSize: '1', maxModelLen: '4096'
+  },
+  // CPU-only control (no GPU). Used purely to confirm the cluster can SCHEDULE a
+  // pod for this tenant at all — if this schedules while every GPU type does not,
+  // the blocker is isolated to GPU capacity (tenant/template/image/auth are fine).
+  'cpu-test': {
+    hfModel: 'Qwen/Qwen2.5-1.5B-Instruct-AWQ',
+    instanceType: process.env.OSS_INSTANCE_CPU || 'm7i.2xlarge',
+    quantization: 'awq', dataType: 'float16', tensorParallelSize: '1', maxModelLen: '4096'
   }
 };
 
