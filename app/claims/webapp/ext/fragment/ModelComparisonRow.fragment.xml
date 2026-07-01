@@ -1,0 +1,29 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:macros="sap.fe.macros">
+
+    <HBox
+        id="modelComparisonRow"
+        class="claimsModelComparisonRow"
+        width="100%"
+        renderType="Bare"
+        alignItems="Start"
+        justifyContent="Start">
+        <VBox id="predictionsCol" class="claimsModelComparisonCol">
+            <Title text="{i18n>Predictions}" level="H5" class="sapUiTinyMarginBottom" />
+            <macros:Table
+                id="predictionsTable"
+                metaPath="predictions/@com.sap.vocabularies.UI.v1.LineItem"
+                readOnly="true" />
+        </VBox>
+        <VBox id="evaluationsCol" class="claimsModelComparisonCol">
+            <Title text="{i18n>Evaluations}" level="H5" class="sapUiTinyMarginBottom" />
+            <macros:Table
+                id="evaluationsTable"
+                metaPath="evaluations/@com.sap.vocabularies.UI.v1.LineItem"
+                readOnly="true" />
+        </VBox>
+    </HBox>
+
+</core:FragmentDefinition>

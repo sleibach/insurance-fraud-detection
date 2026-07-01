@@ -9,7 +9,7 @@ service ClaimService {
 
   // ─── Read-only monitoring entities ───────────────────────────────────────────
 
-  @readonly entity Claims               as projection on db.Claims;
+  entity Claims               as projection on db.Claims;
   @readonly entity Attachments          as projection on db.Attachments;
   @readonly entity StructuredData       as projection on db.StructuredData;
   @readonly entity StructuredDataFields as projection on db.StructuredDataFields;

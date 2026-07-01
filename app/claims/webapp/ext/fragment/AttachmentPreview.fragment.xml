@@ -1,0 +1,22 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+    <Avatar
+        id="idAttachmentPreviewAvatar"
+        core:require="{ preview: 'claims/ext/fragment/AttachmentPreview' }"
+        src="{
+            parts: [
+                { path: 'claim_ID' },
+                { path: 'ID' },
+                { path: 'mediaType' }
+            ],
+            formatter: 'claims.ext.formatter.pipeline.attachmentPreviewSrc'
+        }"
+        visible="{path: 'mediaType', formatter: 'claims.ext.formatter.pipeline.isImageAttachment'}"
+        tooltip="{filename}"
+        displayShape="Square"
+        displaySize="Custom"
+        customDisplaySize="4.5rem"
+        press="preview.onPress"
+        class="claimsAttachmentPreviewImage" />
+</core:FragmentDefinition>

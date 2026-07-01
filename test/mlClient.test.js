@@ -55,7 +55,38 @@ describe('predictWithMl', () => {
     const r = await predictWithMl('gbc', FIELDS);
     expect(global.fetch).toHaveBeenCalledWith(`${ML_API_URL}/predict/gbc`, expect.objectContaining({ method: 'POST' }));
     expect(r.status).toBe('success');
-    expect(r.fraudScore).toBeCloseTo(0.7321, 4);
+    expect(r.fraudScore).toBeCloseTo(0.5321, 4);
+    expect(r.predictedClass).toBe('yes');
+  });
+
+  test('calibrates gbc away from clean-case false positives', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ prediction: 1, probabiltiy: 0.6112 })
+    });
+    const r = await predictWithMl('gbc', [
+      { fieldName: 'pastNumberOfClaims', fieldValue: 'none' },
+      { fieldName: 'numberOfSuppliments', fieldValue: 'none' },
+      { fieldName: 'policeReportFiled', fieldValue: 'Yes' },
+      { fieldName: 'ageOfVehicle', fieldValue: '3 years' }
+    ]);
+    expect(r.fraudScore).toBeCloseTo(0.2412, 4);
+    expect(r.predictedClass).toBe('no');
+  });
+
+  test('keeps gbc fraud decision for strong red flags', async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ prediction: 1, probabiltiy: 0.5775 })
+    });
+    const r = await predictWithMl('gbc', [
+      { fieldName: 'pastNumberOfClaims', fieldValue: 'more than 5' },
+      { fieldName: 'numberOfSuppliments', fieldValue: 'more than 5' },
+      { fieldName: 'policeReportFiled', fieldValue: 'No' },
+      { fieldName: 'ageOfVehicle', fieldValue: '7 years' },
+      { fieldName: 'daysPolicyClaim', fieldValue: 'more than 30' }
+    ]);
+    expect(r.fraudScore).toBeCloseTo(0.6175, 4);
     expect(r.predictedClass).toBe('yes');
   });
 

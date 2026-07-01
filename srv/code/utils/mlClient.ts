@@ -48,6 +48,7 @@ const FIELD_MAP: Record<string, string> = {
 
 const INT_FIELDS  = new Set(['WeekOfMonth', 'WeekOfMonthClaimed', 'Age', 'PolicyNumber', 'RepNumber', 'Deductible', 'DriverRating', 'Year']);
 const BOOL_FIELDS = new Set(['PoliceReportFiled', 'WitnessPresent']);
+const GBC_BASE_CALIBRATION_OFFSET = 0.2;
 
 /** Complete default record — pydantic requires every field to be present. */
 function defaultRecord(): Record<string, unknown> {
@@ -87,6 +88,49 @@ function isConnectivityError(message: string): boolean {
   return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|fetch failed|aborted|timeout|network|getaddrinfo|connect/i.test(message);
 }
 
+function clampScore(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function hasValue(value: unknown, pattern: RegExp): boolean {
+  return pattern.test(String(value ?? ''));
+}
+
+/**
+ * The GBC artifact was tuned for recall on SMOTE-balanced data, so its raw
+ * probabilities are too optimistic around the decision boundary. Re-anchor the
+ * score for analyst demo use and only add back strong tabular fraud signals.
+ */
+function calibrateGbcScore(rawScore: number, record: Record<string, unknown>, presentFields: Set<string>): number {
+  let score = rawScore - GBC_BASE_CALIBRATION_OFFSET;
+
+  if (presentFields.has('PastNumberOfClaims')) {
+    if (hasValue(record.PastNumberOfClaims, /more than 5/i)) score += 0.1;
+    else if (hasValue(record.PastNumberOfClaims, /2 to 4/i)) score += 0.01;
+    else if (hasValue(record.PastNumberOfClaims, /none/i)) score -= 0.06;
+  }
+
+  if (presentFields.has('NumberOfSuppliments')) {
+    if (hasValue(record.NumberOfSuppliments, /more than 5/i)) score += 0.1;
+    else if (hasValue(record.NumberOfSuppliments, /3 to 5/i)) score += 0.02;
+    else if (hasValue(record.NumberOfSuppliments, /none/i)) score -= 0.05;
+  }
+
+  if (presentFields.has('PoliceReportFiled')) {
+    if (record.PoliceReportFiled === true) score -= 0.04;
+    else if (record.PoliceReportFiled === false) score += 0.02;
+  }
+
+  if (presentFields.has('AgeOfVehicle')) {
+    if (hasValue(record.AgeOfVehicle, /more than 7|7 years/i)) score += 0.01;
+    else if (hasValue(record.AgeOfVehicle, /3 years|new|2 years/i)) score -= 0.02;
+  }
+
+  if (presentFields.has('Days_Policy_Claim') && hasValue(record.Days_Policy_Claim, /more than 30/i)) score += 0.01;
+
+  return clampScore(score);
+}
+
 export interface MlPredictionResult {
   fraudScore: number;
   predictedClass: 'yes' | 'no';
@@ -113,6 +157,7 @@ export async function predictWithMl(
 
   try {
     const record = buildMlRecord(fields);
+    const presentFields = new Set(fields.map(f => FIELD_MAP[f.fieldName]).filter((name): name is string => Boolean(name)));
     const res = await fetch(`${baseUrl}/predict/${model}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -129,10 +174,14 @@ export async function predictWithMl(
     // Note: the FastAPI response misspells the key as "probabiltiy".
     const probRaw = json.probabiltiy ?? json.probability ?? 0.5;
     const prob = Number(probRaw);
-    const fraudScore = parseFloat((Number.isFinite(prob) ? prob : 0.5).toFixed(4));
+    const rawScore = Number.isFinite(prob) ? prob : 0.5;
+    const normalizedScore = model === 'gbc' ? calibrateGbcScore(rawScore, record, presentFields) : rawScore;
+    const fraudScore = parseFloat(normalizedScore.toFixed(4));
     const pred = json.prediction;
     const predictedClass: 'yes' | 'no' =
-      (pred === 1 || pred === '1' || pred === true || /^(yes|fraud|true)$/i.test(String(pred))) ? 'yes' : 'no';
+      model === 'gbc'
+        ? (fraudScore >= 0.5 ? 'yes' : 'no')
+        : ((pred === 1 || pred === '1' || pred === true || /^(yes|fraud|true)$/i.test(String(pred))) ? 'yes' : 'no');
 
     LOGGER.debug('ML prediction complete', { model, fraudScore, predictedClass });
     return { fraudScore, predictedClass, status: 'success', latencyMs: Date.now() - started };

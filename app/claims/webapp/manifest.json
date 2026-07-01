@@ -89,7 +89,11 @@
       }
     },
     "resources": {
-      "css": []
+      "css": [
+        {
+          "uri": "ext/css/compact-op.css"
+        }
+      ]
     },
     "routing": {
       "config": {},
@@ -170,11 +174,39 @@
             "settings": {
               "editableHeaderContent": false,
               "contextPath": "/Claims",
+              "sectionLayout": "Page",
               "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.FieldGroup#General": {
+                  "layout": {
+                    "type": "ColumnLayout",
+                    "columnsM": 2,
+                    "columnsL": 3,
+                    "columnsXL": 4,
+                    "labelCellsLarge": 12
+                  }
+                },
                 "attachments/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "type": "ResponsiveTable",
                     "condensedLayout": true
+                  },
+                  "columns": {
+                    "AttachmentPreview": {
+                      "header": "{i18n>AttachmentPreview}",
+                      "template": "claims.ext.fragment.AttachmentPreview",
+                      "width": "5.5rem",
+                      "horizontalAlign": "Center",
+                      "properties": [
+                        "claim_ID",
+                        "ID",
+                        "mediaType",
+                        "filename"
+                      ],
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "DataField::filename"
+                      }
+                    }
                   }
                 },
                 "structuredData/fields/@com.sap.vocabularies.UI.v1.LineItem": {
@@ -199,11 +231,25 @@
               "content": {
                 "header": {
                   "facets": {
-                    "PipelineFlow": {
-                      "template": "claims.ext.fragment.PipelineFlow",
+                    "ClaimOverview": {
+                      "template": "claims.ext.fragment.ClaimHeaderOverview",
                       "position": {
                         "placement": "End"
                       }
+                    }
+                  }
+                },
+                "body": {
+                  "sections": {
+                    "ModelComparisonCustom": {
+                      "type": "XMLFragment",
+                      "name": "claims.ext.fragment.ModelComparisonRow",
+                      "title": "{i18n>ModelComparison}",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "StructureAgentFacet"
+                      },
+                      "template": "claims.ext.fragment.ModelComparisonRow"
                     }
                   }
                 }

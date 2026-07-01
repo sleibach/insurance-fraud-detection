@@ -1,0 +1,124 @@
+/*
+ * Tighter Object Page spacing for the claims monitoring app.
+ * Applied via .claimsObjectPageCompact on <body> (index.html).
+ */
+
+/* ── Header: compact pipeline + KPI strip ── */
+.claimsHeaderOverview {
+    padding: 0.125rem 0;
+}
+
+.claimsHeaderKpis {
+    gap: 0.5rem 1.25rem;
+}
+
+.claimsHeaderKpiItem {
+    min-width: 6rem;
+}
+
+.claimsHeaderKpiItem .sapMLabel {
+    font-size: 0.75rem;
+}
+
+.claimsHeaderKpiItem .sapMObjectNumber,
+.claimsHeaderKpiItem .sapMText,
+.claimsHeaderKpiItem .sapMObjStatus {
+    margin-top: 0.125rem;
+}
+
+.claimsObjectPageCompact .sapUxAPObjectPageHeaderContent {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.claimsObjectPageCompact .sapUxAPObjectPageHeaderContentItem {
+    margin-bottom: 0;
+}
+
+/* ── Hide duplicate section titles (anchor bar already shows them) ── */
+.claimsObjectPageCompact .sapUxAPObjectPageSectionTitle,
+.claimsObjectPageCompact .sapUxAPObjectPageSubSectionHeader {
+    display: none !important;
+}
+
+.claimsObjectPageCompact .sapUxAPObjectPageSection {
+    margin-bottom: 0;
+}
+
+.claimsObjectPageCompact .sapUxAPObjectPageSectionHeader {
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.claimsObjectPageCompact .sapUxAPBlockContainer {
+    padding: 0.25rem 0.75rem 0.375rem;
+}
+
+.claimsObjectPageCompact .sapUxAPObjectPageSubSection {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Hide empty attachments block */
+.claimsObjectPageCompact [id*="StructureAgentFacet"] .sapUxAPBlockBase:has(.sapMListTblRowNoData),
+.claimsObjectPageCompact [id*="StructureAgentFacet"] .sapUxAPBlockBase:has(.sapMListNoData) {
+    display: none !important;
+}
+
+/* Compact smart-table toolbars without disabling features */
+.claimsObjectPageCompact .sapUiCompSmartTable .sapMTB,
+.claimsObjectPageCompact .sapUiMdcTable .sapMTB {
+    min-height: 2.25rem;
+}
+
+.claimsObjectPageCompact .sapUiCompSmartTable .sapMTBStandard,
+.claimsObjectPageCompact .sapUiMdcTable .sapMTBStandard {
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+}
+
+.claimsObjectPageCompact .sapMListTbl .sapMLIB.sapMListNoData {
+    min-height: 2.5rem;
+}
+
+/* ── Forms ── */
+.claimsObjectPageCompact .sapUiFormResGrid > div {
+    padding-bottom: 0.0625rem;
+}
+
+.claimsObjectPageCompact .sapUiFormCLSmallColumns .sapUiFormElementLbl,
+.claimsObjectPageCompact .sapUiFormCLSmallColumns .sapUiFormElementCnt {
+    padding-top: 0.0625rem;
+    padding-bottom: 0.0625rem;
+}
+
+.claimsObjectPageCompact .sapMListTbl.sapUiResponsiveMargin {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Side-by-side layout for custom model comparison fragment */
+.claimsModelComparisonRow {
+    gap: 0.75rem;
+}
+
+.claimsModelComparisonCol {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.claimsAttachmentPreviewImage {
+    cursor: zoom-in;
+    object-fit: cover;
+}
+
+.claimsAttachmentPreviewDialogImage {
+    display: block;
+    width: auto !important;
+    height: auto !important;
+    max-width: calc(100vw - 4rem);
+    max-height: calc(100vh - 8rem);
+    margin: 0 auto;
+    object-fit: contain;
+}

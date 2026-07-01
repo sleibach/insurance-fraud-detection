@@ -73,7 +73,7 @@ sap.ui.define([
                 oDialog.setModel(new JSONModel({
                     externalRef: "",
                     rawText: "",
-                    actualFraud: false,
+                    actualFraudSelection: "unknown",
                     attachments: [],
                     // Advanced pipeline configuration (pre-filled with defaults).
                     predictCatalog: PREDICT_CATALOG,
@@ -225,7 +225,7 @@ sap.ui.define([
                 var oAction = oView.getModel().bindContext("/submitClaim(...)");
                 oAction.setParameter("externalRef", oData.externalRef || null);
                 oAction.setParameter("rawText", bHasText ? oData.rawText.trim() : null);
-                oAction.setParameter("actualFraud", !!oData.actualFraud);
+                oAction.setParameter("actualFraud", oData.actualFraudSelection === "unknown" ? null : oData.actualFraudSelection === "true");
                 oAction.setParameter("attachments", (oData.attachments || []).map(function (a) {
                     return {
                         filename: a.filename,

@@ -1,0 +1,56 @@
+<core:FragmentDefinition
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core"
+    xmlns:commons="sap.suite.ui.commons">
+
+    <VBox id="claimHeaderOverview" class="claimsHeaderOverview" width="100%">
+        <commons:MicroProcessFlow id="pipelineFlowHeader" renderType="NoWrap" class="sapUiTinyMarginBottom">
+            <commons:content>
+                <commons:MicroProcessFlowItem
+                    state="Success"
+                    icon="sap-icon://upload"
+                    title="{i18n>StepIntake}" />
+                <commons:MicroProcessFlowItem
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.structureState'}"
+                    icon="sap-icon://document-text"
+                    title="{i18n>StepStructure}" />
+                <commons:MicroProcessFlowItem
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.predictState'}"
+                    icon="sap-icon://ai"
+                    title="{i18n>StepPredict}" />
+                <commons:MicroProcessFlowItem
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.evaluateState'}"
+                    icon="sap-icon://inspect"
+                    title="{i18n>StepEvaluate}" />
+                <commons:MicroProcessFlowItem
+                    state="{path: 'status_code', formatter: 'claims.ext.formatter.pipeline.reviewState'}"
+                    icon="sap-icon://approvals"
+                    title="{i18n>StepReview}" />
+            </commons:content>
+        </commons:MicroProcessFlow>
+
+        <HBox id="claimHeaderKpis" wrap="Wrap" alignItems="Start" justifyContent="Start" class="claimsHeaderKpis">
+            <VBox class="claimsHeaderKpiItem">
+                <Label text="{i18n>Status}" design="Bold" />
+                <ObjectStatus text="{status/name}" />
+            </VBox>
+            <VBox class="claimsHeaderKpiItem">
+                <Label text="{i18n>FraudScoreProprietary}" design="Bold" />
+                <ObjectNumber number="{fraudScoreProprietary}" />
+            </VBox>
+            <VBox class="claimsHeaderKpiItem">
+                <Label text="{i18n>FraudScoreCustom}" design="Bold" />
+                <ObjectNumber number="{fraudScoreCustom}" />
+            </VBox>
+            <VBox class="claimsHeaderKpiItem">
+                <Label text="{i18n>RiskLevelProprietary}" design="Bold" />
+                <Text text="{riskLevelProprietary}" />
+            </VBox>
+            <VBox class="claimsHeaderKpiItem">
+                <Label text="{i18n>RiskLevelOpenSource}" design="Bold" />
+                <Text text="{riskLevelOpenSource}" />
+            </VBox>
+        </HBox>
+    </VBox>
+
+</core:FragmentDefinition>

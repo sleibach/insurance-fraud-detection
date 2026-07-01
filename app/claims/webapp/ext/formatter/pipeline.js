@@ -16,6 +16,15 @@ sap.ui.define(["sap/base/util/ObjectPath"], function (ObjectPath) {
     }
 
     const formatter = {
+        attachmentPreviewSrc: function (sClaimId, sAttachmentId, sMediaType) {
+            if (!sClaimId || !sAttachmentId || !formatter.isImageAttachment(sMediaType)) {
+                return "";
+            }
+            return `/service/ClaimService/Claims(${sClaimId})/attachments(${sAttachmentId})/content`;
+        },
+        isImageAttachment: function (sMediaType) {
+            return typeof sMediaType === "string" && sMediaType.indexOf("image/") === 0;
+        },
         structureState: function (s) { return resolve(s, STRUCTURE_DONE, "structuring"); },
         predictState:   function (s) { return resolve(s, PREDICT_DONE,   "predicting");  },
         evaluateState:  function (s) { return resolve(s, EVALUATE_DONE,  "evaluating");  },

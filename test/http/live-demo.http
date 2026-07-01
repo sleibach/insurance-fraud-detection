@@ -28,8 +28,8 @@
 
 ### ════════════════════════════════════════════════════════════════════════════
 ### CASE A — LEGITIMATE, well documented  (actualFraud = false)   [warm-up]
-### Honda Sport, police report FILED, first claim, no supplements, at-fault but
-### honest. Default two-track config. Expect: LOW risk, both tracks agree "legit".
+### Presentation summary: A tidy, well-documented Honda claim establishes the
+### baseline where both proprietary and open-source tracks should agree it is legit.
 ### ════════════════════════════════════════════════════════════════════════════
 
 POST {{intakeUrl}}/submitClaim
@@ -51,11 +51,8 @@ Content-Type: application/json
 
 ### ════════════════════════════════════════════════════════════════════════════
 ### CASE B — LEGITIMATE but looks fraudy: false-positive trap  (actualFraud = false)
-### Ford Utility (>69k), NO police, 3–5 supplements, 2–4 prior claims, at fault —
-### every surface red flag, yet a genuine claim. FULL FOUR-MODEL PANEL on one
-### prediction: Claude · gpt-oss-120b · gpt-oss-20b · gemma-3-27b, all ←gbc.
-### Expect: the strong models (Claude, 120b) stay calibrated → LOW/MEDIUM, legit
-### (green); weaker models may over-flag → the model-calibration talking point.
+### Presentation summary: This honest Ford claim looks suspicious on paper, making
+### it the false-positive trap that tests whether the models stay calibrated.
 ### ════════════════════════════════════════════════════════════════════════════
 
 POST {{intakeUrl}}/submitClaim
@@ -64,12 +61,10 @@ Content-Type: application/json
 {
   "externalRef": "DEMO-B-LEGIT-LOOKSFRAUDY",
   "rawText": "In mid-April I sideswiped a parked van on a narrow city street with my Ford Utility - it's an older expensive vehicle but big and solid. The damage to the passenger side runs along the door and rear panel, and the wing mirror was knocked clean off. The van's owner wasn't there so I left a note and waited; he called within an hour and we sorted it. The body shop has been finding more things to fix as they go, so supplements have been adding up. I've had a few claims over the years - work driving wear and tear. Deductible $400.",
-  "predictModels": ["gbc"],
+  "predictModels": ["sap-rpt-1-large", "gbc"],
   "evaluations": [
-    { "model": "anthropic--claude-4.6-opus", "inputPredictModel": "gbc" },
-    { "model": "gpt-oss-120b",               "inputPredictModel": "gbc" },
-    { "model": "gpt-oss-20b",                 "inputPredictModel": "gbc" },
-    { "model": "gemma-3-27b",                 "inputPredictModel": "gbc" }
+    { "model": "anthropic--claude-4.6-opus", "inputPredictModel": "sap-rpt-1-large" },
+    { "model": "gpt-oss-120b",               "inputPredictModel": "gbc" }
   ],
   "actualFraud": false
 }
@@ -79,10 +74,8 @@ Content-Type: application/json
 
 ### ════════════════════════════════════════════════════════════════════════════
 ### CASE C — CLEAR FRAUD, maximum red flags  (actualFraud = true)   [headline]
-### Chevrolet Utility (>69k), NO police, >5 supplements, >4 prior claims, at fault,
-### no witness. THREE-WAY EVALUATOR COMPARISON across three predictions:
-###   Claude←RPT-1 · gpt-oss-120b←gbc · gemma-3-27b←rf  (full isolated tracks).
-### Expect: HIGH/CRITICAL risk on every track; the "models agree on fraud" shot.
+### Presentation summary: The Chevrolet claim stacks multiple red flags and should
+### be the clear fraud case where both tracks raise the alarm.
 ### ════════════════════════════════════════════════════════════════════════════
 
 POST {{intakeUrl}}/submitClaim
@@ -91,11 +84,10 @@ Content-Type: application/json
 {
   "externalRef": "DEMO-C-FRAUD-REDFLAGS",
   "rawText": "On a Tuesday in mid-November I had a single-vehicle accident on a busy urban road - drifted and clipped a concrete divider. My Chevrolet Utility is a high-end model, seven years old. Front-driver corner took the brunt, plus underbody work. The body shop has been adding pieces over the months and supplements keep coming through as they uncover more. I've been with this insurer for years, hardly ever had to file before - just the odd small thing here and there - so the paperwork has taken a while to settle. Wrapped up in January. I'm in my early thirties, married. $400 deductible.",
-  "predictModels": ["sap-rpt-1-large", "gbc", "rf"],
+  "predictModels": ["sap-rpt-1-large", "gbc"],
   "evaluations": [
     { "model": "anthropic--claude-4.6-opus", "inputPredictModel": "sap-rpt-1-large" },
-    { "model": "gpt-oss-120b",               "inputPredictModel": "gbc" },
-    { "model": "gemma-3-27b",                 "inputPredictModel": "rf" }
+    { "model": "gpt-oss-120b",               "inputPredictModel": "gbc" }
   ],
   "actualFraud": true
 }

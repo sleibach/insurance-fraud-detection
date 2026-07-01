@@ -77,36 +77,7 @@ annotate service.Claims with @(
     TypeName:       '{i18n>Claim}',
     TypeNamePlural: '{i18n>Claims}',
     Title:          { Value: title },
-    // Short identifier in the header — the full narrative lives in General Information.
     Description:    { Value: externalRef }
-  },
-  UI.HeaderFacets: [
-    { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#Status',          ID: 'StatusHeader' },
-    { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#FraudScoreProp',   ID: 'FraudScorePropHeader' },
-    { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#FraudScoreCustom', ID: 'FraudScoreCustomHeader' },
-    { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#RiskProp',         ID: 'RiskPropHeader' },
-    { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#RiskOSS',          ID: 'RiskOSSHeader' }
-  ],
-  UI.DataPoint#Status: {
-    Value:       status.name,
-    Title:       '{i18n>Status}',
-    Criticality: status.criticality
-  },
-  UI.DataPoint#FraudScoreProp: {
-    Value: fraudScoreProprietary,
-    Title: '{i18n>FraudScoreProprietary}'
-  },
-  UI.DataPoint#FraudScoreCustom: {
-    Value: fraudScoreCustom,
-    Title: '{i18n>FraudScoreCustom}'
-  },
-  UI.DataPoint#RiskProp: {
-    Value: riskLevelProprietary,
-    Title: '{i18n>RiskLevelProprietary}'
-  },
-  UI.DataPoint#RiskOSS: {
-    Value: riskLevelOpenSource,
-    Title: '{i18n>RiskLevelOpenSource}'
   }
 );
 
@@ -130,9 +101,15 @@ annotate service.Claims with @(
       ID:     'GeneralFacet'
     },
     {
+      $Type:  'UI.ReferenceFacet',
+      Label:  '{i18n>ClaimNarrative}',
+      Target: '@UI.FieldGroup#ClaimNarrative',
+      ID:     'ClaimNarrativeFacet'
+    },
+    {
       $Type:  'UI.CollectionFacet',
       Label:  '{i18n>DocumentsAndStructure}',
-      ID:     'DocumentsStructureFacet',
+      ID:     'StructureAgentFacet',
       Facets: [
         {
           $Type:  'UI.ReferenceFacet',
@@ -142,34 +119,9 @@ annotate service.Claims with @(
         },
         {
           $Type:  'UI.ReferenceFacet',
-          Label:  '{i18n>ExtractionSummary}',
-          Target: 'structuredData/@UI.FieldGroup#StructuredDataGroup',
-          ID:     'StructuredDataSummarySubFacet'
-        },
-        {
-          $Type:  'UI.ReferenceFacet',
           Label:  '{i18n>ExtractedFields}',
           Target: 'structuredData/fields/@UI.LineItem',
           ID:     'ExtractedFieldsSubFacet'
-        }
-      ]
-    },
-    {
-      $Type:  'UI.CollectionFacet',
-      Label:  '{i18n>ModelComparison}',
-      ID:     'ModelComparisonFacet',
-      Facets: [
-        {
-          $Type:  'UI.ReferenceFacet',
-          Label:  '{i18n>Predictions}',
-          Target: 'predictions/@UI.LineItem',
-          ID:     'PredictionsSubFacet'
-        },
-        {
-          $Type:  'UI.ReferenceFacet',
-          Label:  '{i18n>Evaluations}',
-          Target: 'evaluations/@UI.LineItem',
-          ID:     'EvaluationsSubFacet'
         }
       ]
     }
@@ -178,13 +130,22 @@ annotate service.Claims with @(
     Label: '{i18n>ClaimDetails}',
     Data: [
       { $Type: 'UI.DataField', Value: externalRef,    Label: '{i18n>ExternalRef}' },
-      { $Type: 'UI.DataField', Value: description,    Label: '{i18n>Description}' },
       { $Type: 'UI.DataField', Value: claimType_code, Label: '{i18n>ClaimType}' },
       { $Type: 'UI.DataField', Value: claimAmount,    Label: '{i18n>ClaimAmount}' },
       { $Type: 'UI.DataField', Value: currency_code,  Label: '{i18n>Currency}' },
+      { $Type: 'UI.DataField', Value: structuredData.incidentDate,         Label: '{i18n>IncidentDate}' },
+      { $Type: 'UI.DataField', Value: structuredData.extractionConfidence, Label: '{i18n>ConfidenceScore}' },
+      { $Type: 'UI.DataField', Value: structuredData.totalTokens,          Label: '{i18n>TotalTokens}' },
+      { $Type: 'UI.DataField', Value: description,    Label: '{i18n>Description}' },
       { $Type: 'UI.DataField', Value: actualFraud,    Label: '{i18n>ActualFraud}' },
       { $Type: 'UI.DataField', Value: reviewNotes,    Label: '{i18n>ReviewNotes}' },
       { $Type: 'UI.DataField', Value: rejectionReason, Label: '{i18n>RejectionReason}' }
+    ]
+  },
+  UI.FieldGroup#ClaimNarrative: {
+    Label: '{i18n>ClaimNarrative}',
+    Data: [
+      { $Type: 'UI.DataField', Value: rawText, Label: '{i18n>RawText}' }
     ]
   }
 );
@@ -278,6 +239,7 @@ annotate service.StructuredDataFields with @(
 // ─── Value Help ───────────────────────────────────────────────────────────────
 
 annotate service.Claims with {
+  rawText @UI.MultiLineText;
   status @(
     Common.ValueListWithFixedValues: true,
     Common.ValueList: {

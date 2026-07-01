@@ -52,10 +52,14 @@
                             </form:FormElement>
                             <form:FormElement label="{i18n>ActualFraud}">
                                 <form:fields>
-                                    <CheckBox
-                                        id="submitClaimActualFraud"
-                                        selected="{submit>/actualFraud}"
-                                        text="{i18n>SubmitClaimActualFraudHint}" />
+                                    <Select
+                                        id="idActualFraudSelect"
+                                        selectedKey="{submit>/actualFraudSelection}"
+                                        width="100%">
+                                        <core:Item id="idUnknownNotLabelledItem" key="unknown" text="{i18n>ActualFraudUnknown}" />
+                                        <core:Item id="idYesActualFraudItem" key="true" text="{i18n>ActualFraudYes}" />
+                                        <core:Item id="idNoLegitimateClaimItem" key="false" text="{i18n>ActualFraudNo}" />
+                                    </Select>
                                 </form:fields>
                             </form:FormElement>
                         </form:formElements>

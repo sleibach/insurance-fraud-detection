@@ -1,6 +1,7 @@
 ---
-title: Live Demo Runbook — Multi-Model Fraud Detection (focused)
-summary: A focused three-case demo script for the insurance fraud detection pipeline — a clean legitimate claim (warm-up), a legitimate-but-fraudy-looking claim (false-positive trap), and one clear fraud (maximum red flags). Each is paired with a deliberately chosen multi-model run configuration that showcases isolated proprietary vs open-source tracks and evaluator-size comparisons. Includes image-generation prompts to create mock claim documents for the vision structure agent. Pairs with ./live-demo.http.
+
+## title: Live Demo Runbook — Multi-Model Fraud Detection (focused)
+summary: A focused three-case demo script for the insurance fraud detection pipeline — a clean legitimate claim (warm-up), a legitimate-but-fraudy-looking claim (false-positive trap), and one clear fraud (maximum red flags). All three use the same default two-track configuration so the presentation focuses on case behaviour rather than changing model settings. Includes image-generation prompts to create mock claim documents for the vision structure agent. Pairs with ./live-demo.http.
 keywords: [live demo, demo runbook, Tathergang, fraud cases, false-positive trap, run configuration, isolated tracks, predictModels, evaluations, sap-rpt-1-large, gbc, rf, anthropic--claude-4.6-opus, gpt-oss-120b, gpt-oss-20b, gemma-3-27b, OpenRouter, actualFraud, predicted-vs-actual, List Report, Object Page, submitClaim, Pipeline Configuration Advanced, image generation prompt, claim document, FNOL, vision structure agent]
 audience: [presenters, developers, architects, AI agents]
 related:
@@ -11,7 +12,8 @@ related:
   - docs/ai/open-source-llm-byom.md
   - docs/ai/development-runtime.md
 last_updated: 2026-06-30
----
+
+
 
 # Live Demo Runbook — Multi-Model Fraud Detection (focused)
 
@@ -19,8 +21,10 @@ A focused **three-case** walkthrough that demonstrates the full autonomous
 pipeline and the side-by-side **proprietary vs open-source** model comparison.
 The cases are chosen to tell the whole story in minutes: a clean legit baseline,
 then the system **does not over-flag** an honest claim that merely looks
-suspicious, and finally it **catches real fraud**. The requests live in
-[`./live-demo.http`](./live-demo.http); this is the narration.
+suspicious, and finally it **catches real fraud**. All three requests use the
+same default two-track pipeline configuration; this keeps the presentation
+focused on the case differences, not on changing model settings. The requests
+live in `[./live-demo.http](./live-demo.http)`; this is the narration.
 
 ## Data provenance
 
@@ -39,26 +43,30 @@ CF_HOME=. OSS_LLM_SOURCE=destination cds watch --profile hybrid
 ```
 
 - Backend reachable at `http://localhost:4004`, Claims app at
-  `http://localhost:4004/claims/webapp/index.html`.
+`http://localhost:4004/claims/webapp/index.html`.
 - The custom ML FastAPI auto-starts with `cds watch` (serves `gbc`, `rf`, …).
 - Fire the `.http` requests **in order**; the pipeline runs autonomously per claim.
+
+
 
 ## Demo images (FNOL + damage photos)
 
 Pre-generated PNGs live alongside this runbook in `test/http/`:
 
-| Case | FNOL form | Damage photo |
-|---|---|---|
+
+| Case            | FNOL form    | Damage photo   |
+| --------------- | ------------ | -------------- |
 | A (clean legit) | `A-FNOL.png` | `A-Damage.png` |
-| B (legit trap) | `B-FNOL.png` | `B-Damage.png` |
-| C (fraud) | `C-FNOL.png` | `C-Damage.png` |
+| B (legit trap)  | `B-FNOL.png` | `B-Damage.png` |
+| C (fraud)       | `C-FNOL.png` | `C-Damage.png` |
+
 
 **UI path:** Submit Claim → **Add files** → select one or both PNGs for the case.
 You can leave the narrative empty (image-only intake) or paste the matching
-`rawText` from [`live-demo.http`](./live-demo.http) for a richer comparison.
+`rawText` from `[live-demo.http](./live-demo.http)` for a richer comparison.
 
 **REST path:** add an `attachments` array with base64 `content` (see
-[`intake.http`](./intake.http)). Large payloads need the 30 MB body limit in
+`[intake.http](./intake.http)`). Large payloads need the 30 MB body limit in
 `package.json` (`cds.server.body_parser.limit`).
 
 **What to watch:** Object Page → **Attachments** (stored files), **Structured Data**
@@ -68,25 +76,29 @@ You can leave the narrative empty (image-only intake) or paste the matching
 ## How to present each claim
 
 1. Send the request (or use the UI **Submit Claim** dialog — paste narrative and/or
-   **upload FNOL/damage images** via **Add files**; optionally expand **Pipeline
+  **upload FNOL/damage images** via **Add files**; optionally expand **Pipeline
    Configuration (Advanced)** to set models by hand).
 2. In the **List Report**, watch the claim march through the process-flow
-   (Intake → Structure → Predict → Evaluate → Review) and land on **Evaluated**,
+  (Intake → Structure → Predict → Evaluate → Review) and land on **Evaluated**,
    with the **Risk Level (Proprietary)** and **Risk Level (Open Source)** columns
    filling in.
 3. Open the **Object Page → Predictions** and **Evaluations** tables for the
-   side-by-side comparison: track, provider, model, risk level, fraud decision,
+  side-by-side comparison: track, provider, model, risk level, fraud decision,
    token counts, and latency. The decision cell is colour-coded against
    `actualFraud`.
 
+
+
 ## The run-configuration knobs
 
-| Field | Meaning |
-|---|---|
-| `predictModels` | Which prediction models run in parallel. `sap-rpt-1-large` = SAP RPT-1 (proprietary track); `gbc`/`rf`/… = custom ML (local FastAPI). |
-| `evaluations[].model` | The evaluator LLM. `anthropic--claude-4.6-opus` = proprietary; `gpt-oss-120b` / `gpt-oss-20b` / `gemma-3-27b` = open source (OpenRouter). |
-| `evaluations[].inputPredictModel` | Which prediction that evaluator reasons over — this is what makes the tracks **isolated** and comparable. |
-| `actualFraud` | Optional ground-truth label (demo/labelled cases only). |
+
+| Field                             | Meaning                                                                                                                                   |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `predictModels`                   | Which prediction models run in parallel. `sap-rpt-1-large` = SAP RPT-1 (proprietary track); `gbc`/`rf`/… = custom ML (local FastAPI).     |
+| `evaluations[].model`             | The evaluator LLM. `anthropic--claude-4.6-opus` = proprietary; `gpt-oss-120b` / `gpt-oss-20b` / `gemma-3-27b` = open source (OpenRouter). |
+| `evaluations[].inputPredictModel` | Which prediction that evaluator reasons over — this is what makes the tracks **isolated** and comparable.                                 |
+| `actualFraud`                     | Optional ground-truth label (demo/labelled cases only).                                                                                   |
+
 
 Omit `predictModels`/`evaluations` entirely to get the **default two isolated
 tracks**: predict `sap-rpt-1-large` + `gbc`; evaluate Claude←RPT and
@@ -94,29 +106,34 @@ tracks**: predict `sap-rpt-1-large` + `gbc`; evaluate Claude←RPT and
 
 ## The three cases
 
-| # | External Ref | Truth | Dataset red flags | Config theme | What to point at |
-|---|---|---|---|---|---|
-| A | `DEMO-A-LEGIT-CLEAN` | **legit** | police filed, 1st claim, none | **Default two tracks** (baseline) | Both tracks → **low** risk, decisions green. The happy path. |
-| B | `DEMO-B-LEGIT-LOOKSFRAUDY` | **legit** | no police, supplements, prior claims, >69k — looks bad, is fine | **Full 4-model panel** on one prediction (Claude · 120b · 20b · gemma ←gbc) | Strong models stay calibrated (green); weaker ones may over-flag → false-positive resistance. |
-| C | `DEMO-C-FRAUD-REDFLAGS` | **fraud** | no police, >5 supplements, >4 prior claims, >69k, at fault | **3-way evaluator** across 3 predictions (Claude←RPT · 120b←gbc · gemma←rf) | All tracks → **high/critical**; "models agree on fraud". |
+
+| #   | External Ref               | Truth     | Dataset red flags                                               | Presentation summary                                                             | What to point at                                                             |
+| --- | -------------------------- | --------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| A   | `DEMO-A-LEGIT-CLEAN`       | **legit** | police filed, 1st claim, none                                   | A tidy, well-documented Honda claim establishes the legit baseline.              | Both tracks → **low** risk, decisions green. The happy path.                 |
+| B   | `DEMO-B-LEGIT-LOOKSFRAUDY` | **legit** | no police, supplements, prior claims, >69k — looks bad, is fine | An honest Ford claim looks suspicious on paper, making it the false-positive trap. | Both tracks should stay calibrated and avoid over-flagging a genuine claim.  |
+| C   | `DEMO-C-FRAUD-REDFLAGS`    | **fraud** | no police, >5 supplements, >4 prior claims, >69k, at fault      | The Chevrolet claim stacks multiple red flags and should raise the fraud alarm.   | Both tracks should flag materially elevated risk and agree with the label.   |
+
+
+
 
 ### Suggested narration arc
 
 1. **Case A (clean legit)** — establish the happy path and what "good" looks
-   like: both tracks confidently land **low** risk, decisions green.
+  like: both tracks confidently land **low** risk, decisions green.
 2. **Case B (legit trap)** — the contrast. Read the narrative aloud: it has every
-   surface red flag (no police, mounting supplements, prior claims, expensive
-   vehicle, at fault). Show that the strong models (Claude, gpt-oss-120b) keep it
+  surface red flag (no police, mounting supplements, prior claims, expensive
+   vehicle, at fault). Show whether the two standard tracks keep it
    **low/medium and decide legit (green)** — the pipeline reasons, it doesn't just
-   key on red flags. Point at any weaker model (20b/gemma) that over-flags to
-   motivate **why model choice matters**.
+   key on red flags.
 3. **Case C (clear fraud)** — the obvious one. Show the whole comparison grid
-   lighting up **high/critical** across the proprietary and open-source tracks —
-   "the models agree on fraud" — and pull up the token + latency columns to talk
-   cost/performance per model.
+  lighting up **high/critical** across the same proprietary and open-source
+   tracks — "the models agree on fraud" — and pull up the token + latency columns
+   to talk cost/performance per model.
 
 > **One-line takeaway for the audience:** *"Same pipeline, multiple models in
 > parallel — it catches the fraud and leaves the honest claims alone."*
+
+
 
 ## Expected pipeline behaviour (not a guarantee)
 
@@ -124,10 +141,9 @@ Outputs are live model calls and will vary run to run:
 
 - **Case A (clean legit)** → **low** risk, `fraudDecision = false` on both tracks.
 - **Case B (legit, looks fraudy)** → Claude and gpt-oss-120b should land
-  **low/medium**, `fraudDecision = false` (green). The smaller/weaker models
-  (gpt-oss-20b, gemma-3-27b) may over-flag — that contrast *is* the point.
+**low/medium**, `fraudDecision = false` (green).
 - **Case C (clear fraud)** → **high/critical** risk, `fraudDecision = true` on
-  every track.
+both tracks.
 
 If an open-source evaluator is unreachable, that single track falls back to a
 `stub` evaluation (status `stub`) and the rest of the pipeline still completes.
@@ -151,7 +167,7 @@ into an image model (and keep the on-form text short so it renders legibly).
 > report filed (Yes/No checkboxes), At fault (Yes/No), Prior claims (number),
 > Deductible, and a large "Description of incident" box. Photorealistic office
 > document, even lighting, legible text, no watermarks. Description box reads:
-> "<SHORT_NARRATIVE>".
+> "".
 
 **Case A — clean legitimate:**
 
@@ -208,6 +224,8 @@ into an image model (and keep the on-form text short so it renders legibly).
 > only light surface damage, yet the file carries 6+ supplements and extensive
 > underbody repairs — the visual/billing mismatch is a fraud signal.)
 
+
+
 ## Reset between demos
 
 ```bash
@@ -215,5 +233,5 @@ into an image model (and keep the on-form text short so it renders legibly).
 cds deploy --to sqlite
 ```
 
-Use [`./monitor.http`](./monitor.http) to query claims, predictions and
+Use `[./monitor.http](./monitor.http)` to query claims, predictions and
 evaluations over OData while presenting.
